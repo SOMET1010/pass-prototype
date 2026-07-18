@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2, MapPin } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2, MapPin, MessageSquare, Send } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
@@ -14,9 +14,15 @@ import {
   formatDate,
   formatDateHeure,
 } from "../lib/rules";
-import type { Demande, Personne, Verification as Verif, Decision, Distribution, StockPoint } from "../lib/types";
+import type { Demande, Personne, Verification as Verif, Decision, Distribution, StockPoint, Notification } from "../lib/types";
 
 const ORDRE: Record<string, number> = { oneci: 0, rsu: 1, operateur: 2, historique: 3, imei: 4 };
+
+/** Numéro de téléphone fictif déterministe (prototype, aucune donnée réelle). */
+function numeroSimule(cni: string): string {
+  const d = (cni.match(/\d/g) ?? []).join("").padEnd(8, "0").slice(-8);
+  return `+225 07 ${d.slice(0, 2)} ${d.slice(2, 4)} ${d.slice(4, 6)} ${d.slice(6, 8)}`;
+}
 
 export function Verification() {
   const { id } = useParams();
@@ -28,6 +34,7 @@ export function Verification() {
   const [decision, setDecision] = useState<Decision | null>(null);
   const [distribution, setDistribution] = useState<Distribution | null>(null);
   const [pointsStock, setPointsStock] = useState<StockPoint[]>([]);
+  const [notifs, setNotifs] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [refusMode, setRefusMode] = useState(false);
@@ -42,18 +49,20 @@ export function Verification() {
       return;
     }
     setDemande(dem as Demande);
-    const [{ data: pers }, { data: vs }, { data: dec }, { data: dist }, { data: pts }] = await Promise.all([
+    const [{ data: pers }, { data: vs }, { data: dec }, { data: dist }, { data: pts }, { data: nt }] = await Promise.all([
       supabase.from("personne").select("*").eq("id_personne", (dem as Demande).id_personne).maybeSingle(),
       supabase.from("verification").select("*").eq("id_demande", id),
       supabase.from("decision").select("*").eq("id_demande", id).maybeSingle(),
       supabase.from("distribution").select("*").eq("id_demande", id).maybeSingle(),
       supabase.from("v_stock_points").select("*"),
+      supabase.from("notification").select("*").eq("id_demande", id).order("horodatage", { ascending: false }),
     ]);
     setPersonne(pers as Personne);
     setVerifs(((vs as Verif[]) ?? []).sort((a, b) => (ORDRE[a.source] ?? 9) - (ORDRE[b.source] ?? 9)));
     setDecision((dec as Decision) ?? null);
     setDistribution((dist as Distribution) ?? null);
     setPointsStock((pts as StockPoint[]) ?? []);
+    setNotifs((nt as Notification[]) ?? []);
     setLoading(false);
   }, [id]);
 
@@ -104,6 +113,24 @@ export function Verification() {
     setBusy(false);
     if (error) return toast(error.message, "error");
     toast("Terminal marqué comme activé.", "success");
+    charger();
+  }
+
+  async function envoyerSms() {
+    if (!demande || !personne) return;
+    const pr = pointRecommande(pointsStock, personne.zone_residence);
+    if (!pr) return toast("Aucun point de retrait avec stock à communiquer.", "error");
+    const dest = numeroSimule(personne.numero_cni);
+    const msg = `PASS: Votre demande ${demande.numero_dossier} est validee. Retirez votre smartphone subventionne au ${pr.libelle} (${pr.zone}). Munissez-vous de votre piece d'identite.`;
+    setBusy(true);
+    const { error } = await supabase.rpc("pass_notifier_sms", {
+      p_id_demande: demande.id_demande,
+      p_destinataire: dest,
+      p_message: msg,
+    });
+    setBusy(false);
+    if (error) return toast(error.message, "error");
+    toast("SMS simulé envoyé au bénéficiaire.", "success");
     charger();
   }
 
@@ -338,6 +365,53 @@ export function Verification() {
                   {busy ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />} Marquer comme activé
                 </button>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Notification SMS (simulée) */}
+      {demande.etat === "validee" && (
+        <div className="card p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <MessageSquare size={18} className="text-pass-blue" />
+            <h2 className="text-base font-semibold">Notification du bénéficiaire — lieu de retrait</h2>
+            <SimuleBadge />
+          </div>
+          {pointRetrait ? (
+            <>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs text-slate-400 mb-1">
+                  Aperçu du SMS · destinataire {numeroSimule(personne.numero_cni)}
+                </div>
+                <p className="text-sm text-slate-700">
+                  PASS : Votre demande {demande.numero_dossier} est validée. Retirez votre smartphone subventionné au{" "}
+                  <strong>{pointRetrait.libelle}</strong> ({pointRetrait.zone}). Munissez-vous de votre pièce d'identité.
+                </p>
+              </div>
+              <button onClick={envoyerSms} className="btn-accent" disabled={busy}>
+                {busy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Envoyer le SMS (simulé)
+              </button>
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">Aucun point de retrait avec stock à communiquer pour le moment.</p>
+          )}
+
+          {notifs.length > 0 && (
+            <div className="space-y-2 pt-1">
+              <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Historique des envois</div>
+              {notifs.map((n) => (
+                <div key={n.id_notification} className="rounded-lg border border-slate-200 p-3">
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span>{n.destinataire} · {n.canal.toUpperCase()}</span>
+                    <span className="flex items-center gap-2">
+                      {formatDateHeure(n.horodatage)}
+                      <SimuleBadge />
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-700 mt-1">{n.message}</p>
+                </div>
+              ))}
             </div>
           )}
         </div>

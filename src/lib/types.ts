@@ -113,6 +113,16 @@ export interface Distribution {
   statut_activation: "non_active" | "active";
 }
 
+export interface Notification {
+  id_notification: string;
+  id_demande: string;
+  canal: string;
+  destinataire: string | null;
+  message: string;
+  est_simule: boolean;
+  horodatage: string;
+}
+
 export interface JournalAudit {
   id_evenement: string;
   acteur: string;
