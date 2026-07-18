@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Users, CheckCircle2, HelpCircle, XCircle, Gauge, ScrollText, Package, UserCog } from "lucide-react";
+import { Users, CheckCircle2, HelpCircle, XCircle, Gauge, ScrollText, Package, UserCog, Zap } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDateHeure, LIBELLE_ROLE } from "../lib/rules";
 import type { Campagne, EtatDemande, JournalAudit, Agent } from "../lib/types";
@@ -29,6 +29,7 @@ export function Supervision() {
   const [stock, setStock] = useState(0);
   const [activiteAgents, setActiviteAgents] = useState<{ agent: Agent; enroles: number }[]>([]);
   const [serie7j, setSerie7j] = useState<{ label: string; n: number }[]>([]);
+  const [remises, setRemises] = useState({ total: 0, actives: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +55,9 @@ export function Supervision() {
           supabase.from("demande").select("id_agent").gte("created_at", debut),
           supabase.from("demande").select("created_at").gte("created_at", semaine.toISOString()),
         ]);
+      const { data: dists } = await supabase.from("distribution").select("statut_activation");
+      const distList = (dists as { statut_activation: string }[]) ?? [];
+      setRemises({ total: distList.length, actives: distList.filter((d) => d.statut_activation === "active").length });
       setLignes((dem as Ligne[]) ?? []);
       setJournal((jr as JournalAudit[]) ?? []);
       setStock(stk ?? 0);
@@ -120,12 +124,13 @@ export function Supervision() {
       </div>
 
       {/* KPIs */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-6">
         <Kpi icon={<Users size={18} />} label="Enrôlés" value={total} tone="blue" />
         <Kpi icon={<CheckCircle2 size={18} />} label="Validés" value={valides} tone="green" />
         <Kpi icon={<HelpCircle size={18} />} label="En instruction" value={instruction} tone="orange" />
         <Kpi icon={<XCircle size={18} />} label="Refusés" value={refuses} tone="red" />
-        <Kpi icon={<Package size={18} />} label="Terminaux en stock" value={stock} tone="slate" />
+        <Kpi icon={<Zap size={18} />} label={`Activés / ${remises.total}`} value={remises.actives} tone="green" />
+        <Kpi icon={<Package size={18} />} label="En stock" value={stock} tone="slate" />
       </div>
 
       {/* Avancement quota global */}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, Loader2 } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
@@ -93,6 +93,16 @@ export function Verification() {
     charger();
   }
 
+  async function activer() {
+    if (!demande) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("pass_activer_terminal", { p_id_demande: demande.id_demande });
+    setBusy(false);
+    if (error) return toast(error.message, "error");
+    toast("Terminal marqué comme activé.", "success");
+    charger();
+  }
+
   if (loading) return <div className="text-slate-400">Chargement du dossier…</div>;
   if (!demande || !personne) return <div className="text-slate-500">Dossier introuvable.</div>;
 
@@ -121,9 +131,14 @@ export function Verification() {
             {personne.zone_residence}
           </p>
         </div>
-        <button onClick={relancer} className="btn-ghost" disabled={busy}>
-          <RefreshCw size={16} className={busy ? "animate-spin" : ""} /> Relancer les vérifications
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <Link to={`/fiche/${demande.id_demande}`} className="btn-ghost">
+            <FileDown size={16} /> Exporter la fiche (PDF)
+          </Link>
+          <button onClick={relancer} className="btn-ghost" disabled={busy}>
+            <RefreshCw size={16} className={busy ? "animate-spin" : ""} /> Relancer les vérifications
+          </button>
+        </div>
       </div>
 
       {/* Les 4 contrôles */}
@@ -251,19 +266,45 @@ export function Verification() {
 
       {/* Suite du parcours */}
       {demande.etat === "validee" && (
-        <div className="card p-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold">Remise du terminal</h2>
-            <p className="text-sm text-slate-500">Le dossier est validé : la remise peut être effectuée.</p>
+        <div className="card p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold">Remise du terminal</h2>
+              <p className="text-sm text-slate-500">
+                {distribution ? "Terminal remis." : "Le dossier est validé : la remise peut être effectuée."}
+              </p>
+            </div>
+            {distribution ? (
+              <Link to={`/recu/${demande.id_demande}`} className="btn-ghost">
+                <FileText size={16} /> Voir le reçu
+              </Link>
+            ) : (
+              <button onClick={() => navigate(`/remise/${demande.id_demande}`)} className="btn-primary">
+                <ArrowRight size={16} /> Procéder à la remise
+              </button>
+            )}
           </div>
-          {distribution ? (
-            <Link to={`/recu/${demande.id_demande}`} className="btn-ghost">
-              <FileText size={16} /> Voir le reçu
-            </Link>
-          ) : (
-            <button onClick={() => navigate(`/remise/${demande.id_demande}`)} className="btn-primary">
-              <ArrowRight size={16} /> Procéder à la remise
-            </button>
+
+          {distribution && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-600">Statut d'activation :</span>
+                {distribution.statut_activation === "active" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-300">
+                    <Zap size={12} /> Activé
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500 border border-slate-300">
+                    Non activé
+                  </span>
+                )}
+              </div>
+              {distribution.statut_activation !== "active" && agent && (agent.role === "remise" || agent.role === "superviseur") && (
+                <button onClick={activer} className="btn-accent !py-2" disabled={busy}>
+                  {busy ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />} Marquer comme activé
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}

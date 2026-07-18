@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Search, QrCode, Camera, XCircle, Loader2 } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { Search, QrCode, Camera, XCircle } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "../components/Toaster";
+import { EtatBadge } from "../components/Badges";
+import type { Demande } from "../lib/types";
+
+interface Row extends Demande {
+  personne: { nom: string; prenoms: string; numero_cni: string } | null;
+}
 
 // BarcodeDetector est natif sur Chromium ; on l'utilise sans dépendance externe.
 type BarcodeDetectorLike = {
@@ -11,8 +17,8 @@ type BarcodeDetectorLike = {
 
 export function Recherche() {
   const navigate = useNavigate();
-  const [num, setNum] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [q, setQ] = useState("");
   const [scanActif, setScanActif] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -20,20 +26,35 @@ export function Recherche() {
 
   const scanDisponible = typeof (window as unknown as { BarcodeDetector?: unknown }).BarcodeDetector !== "undefined";
 
-  async function ouvrirDossier(numeroDossier: string) {
-    const valeur = numeroDossier.trim().toUpperCase();
-    if (!valeur) return;
-    setBusy(true);
-    const { data } = await supabase
+  useEffect(() => {
+    supabase
       .from("demande")
-      .select("id_demande")
-      .eq("numero_dossier", valeur)
-      .maybeSingle();
-    setBusy(false);
-    if (!data) {
-      toast(`Aucun dossier trouvé pour « ${valeur} ».`, "error");
-      return;
+      .select("*, personne(nom,prenoms,numero_cni)")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setRows((data as Row[]) ?? []));
+  }, []);
+
+  const s = q.trim().toLowerCase();
+  const resultats =
+    s.length < 2
+      ? []
+      : rows.filter(
+          (r) =>
+            r.numero_dossier.toLowerCase().includes(s) ||
+            r.personne?.nom.toLowerCase().includes(s) ||
+            r.personne?.prenoms.toLowerCase().includes(s) ||
+            r.personne?.numero_cni.toLowerCase().includes(s),
+        );
+
+  async function ouvrirParNumero(numeroDossier: string) {
+    const valeur = numeroDossier.trim().toUpperCase();
+    const local = rows.find((r) => r.numero_dossier.toUpperCase() === valeur);
+    if (local) {
+      stopScan();
+      return navigate(`/verification/${local.id_demande}`);
     }
+    const { data } = await supabase.from("demande").select("id_demande").eq("numero_dossier", valeur).maybeSingle();
+    if (!data) return toast(`Aucun dossier « ${valeur} ».`, "error");
     stopScan();
     navigate(`/verification/${(data as { id_demande: string }).id_demande}`);
   }
@@ -55,7 +76,7 @@ export function Recherche() {
         try {
           const codes = await detector.detect(videoRef.current);
           if (codes.length > 0) {
-            ouvrirDossier(codes[0].rawValue);
+            ouvrirParNumero(codes[0].rawValue);
             return;
           }
         } catch {
@@ -87,31 +108,51 @@ export function Recherche() {
         </div>
         <div>
           <h1 className="text-xl font-bold">Retrouver un dossier</h1>
-          <p className="text-sm text-slate-500">Par numéro de dossier ou en scannant le QR du reçu bénéficiaire.</p>
+          <p className="text-sm text-slate-500">Par nom, numéro de pièce (CNI), numéro de dossier, ou scan du QR du reçu.</p>
         </div>
       </div>
 
-      {/* Saisie manuelle */}
-      <form
-        className="card p-5 space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          ouvrirDossier(num);
-        }}
-      >
-        <label className="field-label">Numéro de dossier</label>
-        <div className="flex gap-2">
+      {/* Recherche unifiée */}
+      <div className="card p-5 space-y-3">
+        <label className="field-label">Nom, prénoms, CNI ou numéro de dossier</label>
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
-            className="field-input font-mono"
-            placeholder="PASS-2026-00001"
-            value={num}
-            onChange={(e) => setNum(e.target.value)}
+            className="field-input pl-9"
+            placeholder="Ex. Mariam, CI-001-334455, PASS-2026-00001…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            autoFocus
           />
-          <button type="submit" className="btn-primary shrink-0" disabled={busy || !num.trim()}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />} Ouvrir
-          </button>
         </div>
-      </form>
+
+        {s.length >= 2 && (
+          <div className="divide-y divide-slate-100 border-t border-slate-100 pt-1">
+            {resultats.length === 0 ? (
+              <p className="py-3 text-sm text-slate-400">Aucun résultat.</p>
+            ) : (
+              resultats.slice(0, 12).map((r) => (
+                <Link
+                  key={r.id_demande}
+                  to={`/verification/${r.id_demande}`}
+                  className="flex items-center justify-between gap-3 py-2.5 hover:bg-slate-50 -mx-2 px-2 rounded"
+                >
+                  <div className="min-w-0">
+                    <div className="font-medium text-slate-700 truncate">
+                      {r.personne ? `${r.personne.nom} ${r.personne.prenoms}` : "—"}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      <span className="font-mono">{r.numero_dossier}</span> ·{" "}
+                      <span className="font-mono">{r.personne?.numero_cni}</span>
+                    </div>
+                  </div>
+                  <EtatBadge etat={r.etat} />
+                </Link>
+              ))
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Scan QR */}
       <div className="card p-5 space-y-3">
@@ -121,7 +162,7 @@ export function Recherche() {
         </div>
         {!scanDisponible ? (
           <p className="text-sm text-slate-400">
-            Le scan par caméra n'est pas pris en charge par ce navigateur. Utilisez la saisie du numéro ci-dessus.
+            Le scan par caméra n'est pas pris en charge par ce navigateur. Utilisez la recherche ci-dessus.
           </p>
         ) : !scanActif ? (
           <button onClick={startScan} className="btn-ghost">
