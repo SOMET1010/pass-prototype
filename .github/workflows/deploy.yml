@@ -20,10 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - name: Configurer Pages (active Pages automatiquement)
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - run: bun install
       - run: bun run build
         env:
