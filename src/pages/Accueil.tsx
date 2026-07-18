@@ -1,7 +1,15 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { UserPlus, FolderKanban, LayoutDashboard, ArrowRight, Users } from "lucide-react";
+import { UserPlus, FolderKanban, LayoutDashboard, ArrowRight, Users, CalendarCheck, CheckCircle2, PackageCheck } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
 import { LIBELLE_ROLE } from "../lib/rules";
+
+function debutDeJournee(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
 
 const PERSONAS = [
   { nom: "Mariam KOUASSI", cni: "CI-001-334455", cas: "Éligible complète (zone rurale, 2G)", attendu: "ÉLIGIBLE → parcours jusqu'au reçu" },
@@ -13,6 +21,23 @@ const PERSONAS = [
 
 export function Accueil() {
   const { agent } = useAuth();
+  const [jour, setJour] = useState({ enroles: 0, valides: 0, remis: 0 });
+
+  useEffect(() => {
+    if (!agent) return;
+    const debut = debutDeJournee();
+    (async () => {
+      const [e, v, r] = await Promise.all([
+        supabase.from("demande").select("*", { count: "exact", head: true })
+          .eq("id_agent", agent.id_agent).gte("created_at", debut),
+        supabase.from("decision").select("*", { count: "exact", head: true })
+          .eq("id_agent", agent.id_agent).eq("sens", "validee").gte("horodatage", debut),
+        supabase.from("distribution").select("*", { count: "exact", head: true })
+          .eq("id_agent", agent.id_agent).gte("date_remise", debut),
+      ]);
+      setJour({ enroles: e.count ?? 0, valides: v.count ?? 0, remis: r.count ?? 0 });
+    })();
+  }, [agent]);
 
   return (
     <div className="space-y-8">
@@ -22,6 +47,22 @@ export function Accueil() {
           Vous êtes connecté·e en tant que <strong className="text-pass-blue">{agent && LIBELLE_ROLE[agent.role]}</strong>.
           Sélectionnez une action pour démarrer.
         </p>
+      </section>
+
+      {/* Activité du jour de l'agent connecté */}
+      <section className="card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <CalendarCheck size={18} className="text-pass-blue" />
+          <h2 className="text-lg font-semibold">Votre activité aujourd'hui</h2>
+          <span className="ml-auto text-xs text-slate-400">
+            {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" })}
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <ActiviteJour icon={<UserPlus size={18} />} valeur={jour.enroles} label="Enrôlements" tone="blue" />
+          <ActiviteJour icon={<CheckCircle2 size={18} />} valeur={jour.valides} label="Dossiers validés" tone="green" />
+          <ActiviteJour icon={<PackageCheck size={18} />} valeur={jour.remis} label="Terminaux remis" tone="orange" />
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
@@ -91,6 +132,33 @@ export function Accueil() {
           </table>
         </div>
       </section>
+    </div>
+  );
+}
+
+function ActiviteJour({
+  icon,
+  valeur,
+  label,
+  tone,
+}: {
+  icon: React.ReactNode;
+  valeur: number;
+  label: string;
+  tone: "blue" | "green" | "orange";
+}) {
+  const tones: Record<string, string> = {
+    blue: "bg-pass-blue-light text-pass-blue",
+    green: "bg-emerald-50 text-emerald-600",
+    orange: "bg-pass-orange-light text-pass-orange",
+  };
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-3">
+      <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${tones[tone]}`}>{icon}</div>
+      <div>
+        <div className="text-2xl font-bold leading-none text-slate-800">{valeur}</div>
+        <div className="text-xs text-slate-500 mt-1">{label}</div>
+      </div>
     </div>
   );
 }

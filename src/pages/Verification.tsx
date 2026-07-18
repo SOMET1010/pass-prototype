@@ -4,6 +4,7 @@ import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, Loa
 import { supabase } from "../lib/supabase";
 import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
+import { ParcoursStepper } from "../components/ParcoursStepper";
 import { useAuth } from "../context/AuthContext";
 import {
   LIBELLE_SOURCE,
@@ -99,8 +100,12 @@ export function Verification() {
   const decisionPrise = !!decision;
   const enAttenteDecision = !decisionPrise && (demande.etat === "soumise" || demande.etat === "a_instruire");
 
+  const etapeActive = distribution ? 4 : decision ? 3 : demande.recommandation ? 2 : 1;
+
   return (
     <div className="space-y-6">
+      <ParcoursStepper active={etapeActive} refused={decision?.sens === "refusee"} />
+
       {/* En-tête dossier */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

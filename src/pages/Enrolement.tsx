@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { fichierVersDataUrl } from "../lib/image";
 import { toast } from "../components/Toaster";
 import { SimuleBadge, ResultatIcon } from "../components/Badges";
+import { ParcoursStepper } from "../components/ParcoursStepper";
 import { LIBELLE_RESULTAT } from "../lib/rules";
 import type { Campagne, Demande, ResultatVerif, MoyenConsentement } from "../lib/types";
 
@@ -129,6 +130,8 @@ export function Enrolement() {
 
   return (
     <div className="space-y-6">
+      <ParcoursStepper active={demande ? 1 : 0} />
+
       <div className="flex items-center gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-lg bg-pass-blue-light text-pass-blue">
           <UserPlus size={20} />

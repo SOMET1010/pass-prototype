@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
-import { Users, CheckCircle2, HelpCircle, XCircle, Gauge, ScrollText, Package } from "lucide-react";
+import { Users, CheckCircle2, HelpCircle, XCircle, Gauge, ScrollText, Package, UserCog } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { formatDateHeure } from "../lib/rules";
-import type { Campagne, EtatDemande, JournalAudit } from "../lib/types";
+import { formatDateHeure, LIBELLE_ROLE } from "../lib/rules";
+import type { Campagne, EtatDemande, JournalAudit, Agent } from "../lib/types";
 
 interface Ligne {
   etat: EtatDemande;
   personne: { zone_residence: string } | null;
+}
+
+function debutDeJournee(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
 }
 
 export function Supervision() {
@@ -14,10 +20,12 @@ export function Supervision() {
   const [lignes, setLignes] = useState<Ligne[]>([]);
   const [journal, setJournal] = useState<JournalAudit[]>([]);
   const [stock, setStock] = useState(0);
+  const [activiteAgents, setActiviteAgents] = useState<{ agent: Agent; enroles: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
+      const debut = debutDeJournee();
       const { data: camp } = await supabase
         .from("campagne")
         .select("*")
@@ -26,16 +34,28 @@ export function Supervision() {
         .limit(1)
         .maybeSingle();
       setCampagne(camp as Campagne);
-      const [{ data: dem }, { data: jr }, { count: stk }] = await Promise.all([
+      const [{ data: dem }, { data: jr }, { count: stk }, { data: agents }, { data: demJour }] = await Promise.all([
         camp
           ? supabase.from("demande").select("etat, personne(zone_residence)").eq("id_campagne", (camp as Campagne).id_campagne)
           : Promise.resolve({ data: [] as Ligne[] }),
         supabase.from("journal_audit").select("*").order("horodatage", { ascending: false }).limit(15),
         supabase.from("terminal").select("*", { count: "exact", head: true }).eq("statut", "en_stock"),
+        supabase.from("agent").select("*").order("role"),
+        supabase.from("demande").select("id_agent").gte("created_at", debut),
       ]);
       setLignes((dem as Ligne[]) ?? []);
       setJournal((jr as JournalAudit[]) ?? []);
       setStock(stk ?? 0);
+      // Enrôlements du jour par agent
+      const compte = new Map<string, number>();
+      for (const d of (demJour as { id_agent: string | null }[]) ?? []) {
+        if (d.id_agent) compte.set(d.id_agent, (compte.get(d.id_agent) ?? 0) + 1);
+      }
+      setActiviteAgents(
+        ((agents as Agent[]) ?? [])
+          .filter((a) => a.role === "enrolement" || (compte.get(a.id_agent) ?? 0) > 0)
+          .map((a) => ({ agent: a, enroles: compte.get(a.id_agent) ?? 0 })),
+      );
       setLoading(false);
     })();
   }, []);
@@ -119,6 +139,52 @@ export function Supervision() {
             </div>
           ))}
           {parZone.size === 0 && <p className="text-sm text-slate-400">Aucune zone couverte.</p>}
+        </div>
+      </div>
+
+      {/* Enrôlements du jour par agent */}
+      <div className="card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <UserCog size={18} className="text-pass-blue" />
+          <h2 className="text-base font-semibold">Enrôlements du jour par agent</h2>
+          <span className="ml-auto text-xs text-slate-400">
+            {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" })}
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-slate-400 border-b border-slate-200">
+                <th className="py-2 pr-4 font-medium">Agent</th>
+                <th className="py-2 pr-4 font-medium">Rôle</th>
+                <th className="py-2 font-medium text-right">Enrôlements aujourd'hui</th>
+              </tr>
+            </thead>
+            <tbody>
+              {activiteAgents.map(({ agent, enroles }) => (
+                <tr key={agent.id_agent} className="border-b border-slate-100 last:border-0">
+                  <td className="py-2.5 pr-4 font-medium text-slate-700">{agent.identite.split(" (")[0]}</td>
+                  <td className="py-2.5 pr-4 text-slate-500">{LIBELLE_ROLE[agent.role]}</td>
+                  <td className="py-2.5 text-right">
+                    <span
+                      className={`inline-block min-w-8 rounded-full px-2.5 py-0.5 text-sm font-bold ${
+                        enroles > 0 ? "bg-pass-blue-light text-pass-blue" : "bg-slate-100 text-slate-400"
+                      }`}
+                    >
+                      {enroles}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {activiteAgents.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="py-3 text-sm text-slate-400">
+                    Aucun enrôlement enregistré aujourd'hui.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { Printer, Smartphone, CheckCircle2, ShieldAlert } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDate } from "../lib/rules";
+import { ParcoursStepper } from "../components/ParcoursStepper";
 import type { Demande, Personne, Distribution, Terminal } from "../lib/types";
 
 export function Recu() {
@@ -58,6 +59,8 @@ export function Recu() {
 
   return (
     <div className="max-w-xl mx-auto space-y-4">
+      <ParcoursStepper active={4} />
+
       <div className="no-print flex items-center justify-between">
         <Link to={`/verification/${demande.id_demande}`} className="text-sm text-pass-blue hover:underline">
           ← Retour au dossier

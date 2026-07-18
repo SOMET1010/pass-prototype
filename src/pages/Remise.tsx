@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { fichierVersDataUrl } from "../lib/image";
 import { toast } from "../components/Toaster";
 import { SimuleBadge } from "../components/Badges";
+import { ParcoursStepper } from "../components/ParcoursStepper";
 import { useAuth } from "../context/AuthContext";
 import { formatDateHeure } from "../lib/rules";
 import type { Demande, Personne, Terminal } from "../lib/types";
@@ -116,6 +117,8 @@ export function Remise() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      <ParcoursStepper active={3} />
+
       <div className="flex items-center gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-lg bg-pass-blue-light text-pass-blue">
           <PackageCheck size={20} />
