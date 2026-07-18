@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2 } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2, MapPin } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
 import { ParcoursStepper } from "../components/ParcoursStepper";
+import { pointRecommande } from "../lib/zones";
 import { useAuth } from "../context/AuthContext";
 import {
   LIBELLE_SOURCE,
@@ -13,7 +14,7 @@ import {
   formatDate,
   formatDateHeure,
 } from "../lib/rules";
-import type { Demande, Personne, Verification as Verif, Decision, Distribution } from "../lib/types";
+import type { Demande, Personne, Verification as Verif, Decision, Distribution, StockPoint } from "../lib/types";
 
 const ORDRE: Record<string, number> = { oneci: 0, rsu: 1, operateur: 2, historique: 3, imei: 4 };
 
@@ -26,6 +27,7 @@ export function Verification() {
   const [verifs, setVerifs] = useState<Verif[]>([]);
   const [decision, setDecision] = useState<Decision | null>(null);
   const [distribution, setDistribution] = useState<Distribution | null>(null);
+  const [pointsStock, setPointsStock] = useState<StockPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [refusMode, setRefusMode] = useState(false);
@@ -40,16 +42,18 @@ export function Verification() {
       return;
     }
     setDemande(dem as Demande);
-    const [{ data: pers }, { data: vs }, { data: dec }, { data: dist }] = await Promise.all([
+    const [{ data: pers }, { data: vs }, { data: dec }, { data: dist }, { data: pts }] = await Promise.all([
       supabase.from("personne").select("*").eq("id_personne", (dem as Demande).id_personne).maybeSingle(),
       supabase.from("verification").select("*").eq("id_demande", id),
       supabase.from("decision").select("*").eq("id_demande", id).maybeSingle(),
       supabase.from("distribution").select("*").eq("id_demande", id).maybeSingle(),
+      supabase.from("v_stock_points").select("*"),
     ]);
     setPersonne(pers as Personne);
     setVerifs(((vs as Verif[]) ?? []).sort((a, b) => (ORDRE[a.source] ?? 9) - (ORDRE[b.source] ?? 9)));
     setDecision((dec as Decision) ?? null);
     setDistribution((dist as Distribution) ?? null);
+    setPointsStock((pts as StockPoint[]) ?? []);
     setLoading(false);
   }, [id]);
 
@@ -111,6 +115,8 @@ export function Verification() {
   const enAttenteDecision = !decisionPrise && (demande.etat === "soumise" || demande.etat === "a_instruire");
 
   const etapeActive = distribution ? 4 : decision ? 3 : demande.recommandation ? 2 : 1;
+  const pointRetrait = pointRecommande(pointsStock, personne.zone_residence);
+  const memeZone = pointRetrait?.zone === personne.zone_residence;
 
   return (
     <div className="space-y-6">
@@ -284,6 +290,34 @@ export function Verification() {
               </button>
             )}
           </div>
+
+          {/* Point de retrait le plus proche avec stock */}
+          {!distribution && (
+            <div className="flex items-start gap-3 rounded-lg border border-pass-blue/30 bg-pass-blue-light/50 p-4">
+              <MapPin size={18} className="mt-0.5 shrink-0 text-pass-blue" />
+              {pointRetrait ? (
+                <div>
+                  <div className="text-sm font-semibold text-slate-800">
+                    Point de retrait recommandé : {pointRetrait.libelle}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5">
+                    {pointRetrait.stock} terminal{pointRetrait.stock > 1 ? "s" : ""} en stock ·{" "}
+                    {memeZone ? (
+                      <span className="text-emerald-700 font-medium">dans la zone du bénéficiaire ({personne.zone_residence})</span>
+                    ) : (
+                      <span className="text-pass-orange font-medium">
+                        aucun stock à {personne.zone_residence} — centre le plus proche approvisionné
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-red-700">
+                  Aucun point de retrait ne dispose de stock actuellement. Réapprovisionnement nécessaire.
+                </div>
+              )}
+            </div>
+          )}
 
           {distribution && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">

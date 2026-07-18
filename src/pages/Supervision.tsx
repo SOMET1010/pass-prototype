@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Users, CheckCircle2, HelpCircle, XCircle, Gauge, ScrollText, Package, UserCog, Zap } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDateHeure, LIBELLE_ROLE } from "../lib/rules";
+import { CartographieDistribution } from "../components/CartographieDistribution";
+import { coordZone } from "../lib/zones";
+import { MapPin } from "lucide-react";
 import type { Campagne, EtatDemande, JournalAudit, Agent } from "../lib/types";
 
 interface Ligne {
@@ -30,6 +33,7 @@ export function Supervision() {
   const [activiteAgents, setActiviteAgents] = useState<{ agent: Agent; enroles: number }[]>([]);
   const [serie7j, setSerie7j] = useState<{ label: string; n: number }[]>([]);
   const [remises, setRemises] = useState({ total: 0, actives: 0 });
+  const [carte, setCarte] = useState<{ zone: string; distribues: number; stock: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,9 +59,21 @@ export function Supervision() {
           supabase.from("demande").select("id_agent").gte("created_at", debut),
           supabase.from("demande").select("created_at").gte("created_at", semaine.toISOString()),
         ]);
-      const { data: dists } = await supabase.from("distribution").select("statut_activation");
-      const distList = (dists as { statut_activation: string }[]) ?? [];
+      const { data: dists } = await supabase.from("distribution").select("statut_activation, demande(personne(zone_residence))");
+      const distList = (dists as unknown as { statut_activation: string; demande: { personne: { zone_residence: string } | null } | null }[]) ?? [];
       setRemises({ total: distList.length, actives: distList.filter((d) => d.statut_activation === "active").length });
+      // Cartographie : distribués + stock par zone
+      const { data: stockPts } = await supabase.from("v_stock_points").select("zone, stock");
+      const stockZone: Record<string, number> = {};
+      for (const p of (stockPts as { zone: string; stock: number }[]) ?? [])
+        stockZone[p.zone] = (stockZone[p.zone] ?? 0) + p.stock;
+      const distZone: Record<string, number> = {};
+      for (const d of distList) {
+        const z = d.demande?.personne?.zone_residence;
+        if (z) distZone[z] = (distZone[z] ?? 0) + 1;
+      }
+      const zones = Array.from(new Set([...Object.keys(stockZone), ...Object.keys(distZone)])).filter((z) => coordZone(z));
+      setCarte(zones.map((z) => ({ zone: z, distribues: distZone[z] ?? 0, stock: stockZone[z] ?? 0 })));
       setLignes((dem as Ligne[]) ?? []);
       setJournal((jr as JournalAudit[]) ?? []);
       setStock(stk ?? 0);
@@ -173,6 +189,15 @@ export function Supervision() {
           ))}
           {parZone.size === 0 && <p className="text-sm text-slate-400">Aucune zone couverte.</p>}
         </div>
+      </div>
+
+      {/* Cartographie de la distribution */}
+      <div className="card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin size={18} className="text-pass-blue" />
+          <h2 className="text-base font-semibold">Cartographie de la distribution</h2>
+        </div>
+        <CartographieDistribution data={carte} />
       </div>
 
       {/* Courbe des enrôlements (7 derniers jours) */}

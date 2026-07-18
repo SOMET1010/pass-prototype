@@ -6,6 +6,7 @@ import {
   FolderKanban,
   Gavel,
   Search,
+  Warehouse,
   Info,
   LogOut,
   ShieldAlert,
@@ -20,6 +21,7 @@ const NAV = [
   { to: "/dossiers", label: "Dossiers", icon: FolderKanban },
   { to: "/instruction", label: "Instruction", icon: Gavel },
   { to: "/recherche", label: "Recherche", icon: Search },
+  { to: "/stock", label: "Stock", icon: Warehouse },
   { to: "/supervision", label: "Supervision", icon: LayoutDashboard },
   { to: "/a-propos", label: "À propos", icon: Info },
 ];

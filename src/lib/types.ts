@@ -84,6 +84,23 @@ export interface Terminal {
   imei: string;
   id_personne: string | null;
   statut: StatutTerminal;
+  id_point_retrait: string | null;
+}
+
+export interface PointRetrait {
+  id_point: string;
+  libelle: string;
+  zone: string;
+  actif: boolean;
+}
+
+export interface StockPoint {
+  id_point: string;
+  libelle: string;
+  zone: string;
+  actif: boolean;
+  stock: number;
+  remis: number;
 }
 
 export interface Distribution {

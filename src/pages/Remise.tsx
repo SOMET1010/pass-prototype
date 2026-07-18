@@ -8,7 +8,8 @@ import { SimuleBadge } from "../components/Badges";
 import { ParcoursStepper } from "../components/ParcoursStepper";
 import { useAuth } from "../context/AuthContext";
 import { formatDateHeure } from "../lib/rules";
-import type { Demande, Personne, Terminal } from "../lib/types";
+import { pointRecommande } from "../lib/zones";
+import type { Demande, Personne, Terminal, StockPoint } from "../lib/types";
 
 export function Remise() {
   const { id } = useParams();
@@ -17,8 +18,9 @@ export function Remise() {
   const [demande, setDemande] = useState<Demande | null>(null);
   const [personne, setPersonne] = useState<Personne | null>(null);
   const [stock, setStock] = useState<Terminal[]>([]);
+  const [points, setPoints] = useState<StockPoint[]>([]);
+  const [pointId, setPointId] = useState("");
   const [terminalId, setTerminalId] = useState("");
-  const [point, setPoint] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -33,14 +35,19 @@ export function Remise() {
         return;
       }
       setDemande(dem as Demande);
-      const [{ data: pers }, { data: term }, { data: dist }] = await Promise.all([
+      const [{ data: pers }, { data: term }, { data: dist }, { data: pts }] = await Promise.all([
         supabase.from("personne").select("*").eq("id_personne", (dem as Demande).id_personne).maybeSingle(),
         supabase.from("terminal").select("*").eq("statut", "en_stock").order("modele"),
         supabase.from("distribution").select("id_distribution").eq("id_demande", id).maybeSingle(),
+        supabase.from("v_stock_points").select("*").order("zone"),
       ]);
       setPersonne(pers as Personne);
       setStock((term as Terminal[]) ?? []);
       setDejaRemis(!!dist);
+      const stockPts = (pts as StockPoint[]) ?? [];
+      setPoints(stockPts);
+      const reco = pointRecommande(stockPts, (pers as Personne)?.zone_residence ?? "");
+      if (reco) setPointId(reco.id_point);
       setLoading(false);
     })();
   }, [id]);
@@ -56,13 +63,14 @@ export function Remise() {
   }
 
   async function confirmer() {
-    if (!demande || !terminalId) return toast("Sélectionnez un terminal.", "error");
-    if (!point.trim()) return toast("Le point de remise est obligatoire.", "error");
+    const pointSel = points.find((p) => p.id_point === pointId);
+    if (!demande || !pointSel) return toast("Sélectionnez un point de retrait.", "error");
+    if (!terminalId) return toast("Sélectionnez un terminal.", "error");
     setBusy(true);
     const { error } = await supabase.rpc("pass_effectuer_remise", {
       p_id_demande: demande.id_demande,
       p_id_terminal: terminalId,
-      p_point_remise: point,
+      p_point_remise: pointSel.libelle,
       p_photo_url: photo,
       p_geolocalisation: "Simulée — GPS non certifié (prototype)",
     });
@@ -114,6 +122,9 @@ export function Remise() {
   }
 
   const roleRemise = agent && (agent.role === "remise" || agent.role === "superviseur");
+  const terminauxDuPoint = stock.filter((t) => t.id_point_retrait === pointId);
+  const reco = pointRecommande(points, personne.zone_residence);
+  const pointRecommandeLibelle = reco ? reco.libelle : null;
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -139,30 +150,46 @@ export function Remise() {
 
       <div className="card p-5 space-y-4">
         <h2 className="flex items-center gap-2 text-base font-semibold">
-          <Smartphone size={18} className="text-pass-blue" /> Terminal
+          <Smartphone size={18} className="text-pass-blue" /> Point de retrait & terminal
         </h2>
         <div>
-          <label className="field-label">Sélectionner un terminal en stock (IMEI)</label>
-          <select className="field-input" value={terminalId} onChange={(e) => setTerminalId(e.target.value)}>
-            <option value="">— Choisir —</option>
-            {stock.map((t) => (
+          <label className="field-label">Point de retrait</label>
+          <select
+            className="field-input"
+            value={pointId}
+            onChange={(e) => {
+              setPointId(e.target.value);
+              setTerminalId("");
+            }}
+          >
+            <option value="">— Choisir un centre —</option>
+            {points.map((p) => (
+              <option key={p.id_point} value={p.id_point} disabled={p.stock === 0}>
+                {p.libelle} ({p.stock} en stock)
+              </option>
+            ))}
+          </select>
+          {pointRecommandeLibelle && (
+            <p className="mt-1 text-xs text-pass-blue">
+              Recommandé pour {personne.zone_residence} : {pointRecommandeLibelle}
+            </p>
+          )}
+        </div>
+        <div>
+          <label className="field-label">Terminal du centre (IMEI)</label>
+          <select className="field-input" value={terminalId} onChange={(e) => setTerminalId(e.target.value)} disabled={!pointId}>
+            <option value="">{pointId ? "— Choisir —" : "Sélectionnez d'abord un centre"}</option>
+            {terminauxDuPoint.map((t) => (
               <option key={t.id_terminal} value={t.id_terminal}>
                 {t.modele} · IMEI {t.imei}
               </option>
             ))}
           </select>
           <p className="mt-1 text-xs text-slate-400">
-            Scan IMEI par lecteur non disponible en prototype — sélection manuelle depuis le stock.
+            {pointId
+              ? `${terminauxDuPoint.length} terminal(aux) disponible(s) dans ce centre. Scan IMEI non disponible en prototype.`
+              : "Le stock affiché correspond au centre sélectionné."}
           </p>
-        </div>
-        <div>
-          <label className="field-label">Point de remise</label>
-          <input
-            className="field-input"
-            value={point}
-            onChange={(e) => setPoint(e.target.value)}
-            placeholder="Ex. Centre d'enrôlement de Korhogo"
-          />
         </div>
       </div>
 

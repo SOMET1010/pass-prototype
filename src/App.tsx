@@ -7,6 +7,7 @@ import { Enrolement } from "./pages/Enrolement";
 import { Dossiers } from "./pages/Dossiers";
 import { Instruction } from "./pages/Instruction";
 import { Recherche } from "./pages/Recherche";
+import { Stock } from "./pages/Stock";
 import { Verification } from "./pages/Verification";
 import { FicheDossier } from "./pages/FicheDossier";
 import { Remise } from "./pages/Remise";
@@ -37,6 +38,7 @@ export default function App() {
       <Route path="/dossiers" element={<Protected><Dossiers /></Protected>} />
       <Route path="/instruction" element={<Protected><Instruction /></Protected>} />
       <Route path="/recherche" element={<Protected><Recherche /></Protected>} />
+      <Route path="/stock" element={<Protected><Stock /></Protected>} />
       <Route path="/verification/:id" element={<Protected><Verification /></Protected>} />
       <Route path="/fiche/:id" element={<Protected><FicheDossier /></Protected>} />
       <Route path="/remise/:id" element={<Protected><Remise /></Protected>} />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { UserPlus, FolderKanban, LayoutDashboard, ArrowRight, Users, CalendarCheck, CheckCircle2, PackageCheck } from "lucide-react";
+import { UserPlus, FolderKanban, LayoutDashboard, ArrowRight, Users, CalendarCheck, CheckCircle2, PackageCheck, HeartHandshake } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import { LIBELLE_ROLE } from "../lib/rules";
@@ -41,6 +41,36 @@ export function Accueil() {
 
   return (
     <div className="space-y-8">
+      {/* Mission de service public */}
+      <section className="rounded-xl bg-pass-blue text-white p-6 shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="hidden sm:grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-white/15">
+            <HeartHandshake size={24} />
+          </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-white/70">Mission de service public</div>
+            <h2 className="text-lg font-bold text-white mt-0.5">
+              Réduire la fracture numérique individuelle
+            </h2>
+            <p className="text-sm text-white/85 mt-1 max-w-3xl">
+              PASS met un smartphone entre les mains des ayants droit des programmes sociaux, pour un accès
+              <strong className="text-white"> personnel</strong> aux services numériques — mobile money, santé, éducation,
+              services publics. Chaque terminal engage de l'argent public : la plateforme garantit qu'il aille à la bonne
+              personne, et le prouve.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+              <span className="text-white/85">
+                <strong className="text-white">84 %</strong> des ménages ruraux équipés
+              </span>
+              <span className="text-white/85">
+                mais seulement <strong className="text-white">29,6 %</strong> des individus
+              </span>
+              <span className="text-pass-orange font-semibold">→ l'écart que PASS comble</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section>
         <h1 className="text-2xl font-bold">Bonjour, {agent?.identite.split(" (")[0]}</h1>
         <p className="text-slate-500">
