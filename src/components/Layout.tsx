@@ -4,6 +4,8 @@ import {
   LayoutDashboard,
   UserPlus,
   FolderKanban,
+  Gavel,
+  Search,
   Info,
   LogOut,
   ShieldAlert,
@@ -16,6 +18,8 @@ const NAV = [
   { to: "/", label: "Accueil", icon: LayoutDashboard, end: true },
   { to: "/enrolement", label: "Enrôlement", icon: UserPlus },
   { to: "/dossiers", label: "Dossiers", icon: FolderKanban },
+  { to: "/instruction", label: "Instruction", icon: Gavel },
+  { to: "/recherche", label: "Recherche", icon: Search },
   { to: "/supervision", label: "Supervision", icon: LayoutDashboard },
   { to: "/a-propos", label: "À propos", icon: Info },
 ];

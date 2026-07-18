@@ -5,6 +5,8 @@ import { Login } from "./pages/Login";
 import { Accueil } from "./pages/Accueil";
 import { Enrolement } from "./pages/Enrolement";
 import { Dossiers } from "./pages/Dossiers";
+import { Instruction } from "./pages/Instruction";
+import { Recherche } from "./pages/Recherche";
 import { Verification } from "./pages/Verification";
 import { Remise } from "./pages/Remise";
 import { Recu } from "./pages/Recu";
@@ -32,6 +34,8 @@ export default function App() {
       <Route path="/" element={<Protected><Accueil /></Protected>} />
       <Route path="/enrolement" element={<Protected><Enrolement /></Protected>} />
       <Route path="/dossiers" element={<Protected><Dossiers /></Protected>} />
+      <Route path="/instruction" element={<Protected><Instruction /></Protected>} />
+      <Route path="/recherche" element={<Protected><Recherche /></Protected>} />
       <Route path="/verification/:id" element={<Protected><Verification /></Protected>} />
       <Route path="/remise/:id" element={<Protected><Remise /></Protected>} />
       <Route path="/recu/:id" element={<Protected><Recu /></Protected>} />

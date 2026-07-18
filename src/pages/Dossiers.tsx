@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FolderKanban, Search } from "lucide-react";
+import { FolderKanban, Search, ArrowUpDown } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
 import { EtatBadge, RecoBadge } from "../components/Badges";
 import { formatDateHeure } from "../lib/rules";
 import type { Demande, EtatDemande } from "../lib/types";
+
+type Tri = "recent" | "ancien" | "etat";
 
 interface DemandeRow extends Demande {
   personne: { nom: string; prenoms: string; numero_cni: string } | null;
@@ -19,10 +22,21 @@ const FILTRES: { v: "all" | EtatDemande; l: string }[] = [
   { v: "refusee", l: "Refusés" },
 ];
 
+const ORDRE_ETAT: Record<EtatDemande, number> = {
+  a_instruire: 0,
+  soumise: 1,
+  brouillon: 2,
+  validee: 3,
+  refusee: 4,
+};
+
 export function Dossiers() {
+  const { agent } = useAuth();
   const [rows, setRows] = useState<DemandeRow[]>([]);
   const [filtre, setFiltre] = useState<"all" | EtatDemande>("all");
   const [q, setQ] = useState("");
+  const [mesDossiers, setMesDossiers] = useState(false);
+  const [tri, setTri] = useState<Tri>("recent");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,19 +50,27 @@ export function Dossiers() {
       });
   }, []);
 
-  const filtered = rows.filter((r) => {
-    if (filtre !== "all" && r.etat !== filtre) return false;
-    if (q.trim()) {
-      const s = q.toLowerCase();
-      return (
-        r.numero_dossier.toLowerCase().includes(s) ||
-        r.personne?.nom.toLowerCase().includes(s) ||
-        r.personne?.prenoms.toLowerCase().includes(s) ||
-        r.personne?.numero_cni.toLowerCase().includes(s)
-      );
-    }
-    return true;
-  });
+  const filtered = rows
+    .filter((r) => {
+      if (filtre !== "all" && r.etat !== filtre) return false;
+      if (mesDossiers && r.id_agent !== agent?.id_agent) return false;
+      if (q.trim()) {
+        const s = q.toLowerCase();
+        return (
+          r.numero_dossier.toLowerCase().includes(s) ||
+          r.personne?.nom.toLowerCase().includes(s) ||
+          r.personne?.prenoms.toLowerCase().includes(s) ||
+          r.personne?.numero_cni.toLowerCase().includes(s)
+        );
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (tri === "etat") return ORDRE_ETAT[a.etat] - ORDRE_ETAT[b.etat];
+      const da = new Date(a.created_at).getTime();
+      const db = new Date(b.created_at).getTime();
+      return tri === "recent" ? db - da : da - db;
+    });
 
   return (
     <div className="space-y-5">
@@ -73,14 +95,36 @@ export function Dossiers() {
             </button>
           ))}
         </div>
-        <div className="relative ml-auto">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            className="field-input !py-2 pl-9 w-64"
-            placeholder="Rechercher (nom, dossier, CNI)"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
+        <button
+          onClick={() => setMesDossiers((v) => !v)}
+          className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+            mesDossiers ? "bg-pass-orange text-white" : "bg-white border border-slate-300 text-slate-600"
+          }`}
+        >
+          Mes dossiers
+        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <div className="relative">
+            <ArrowUpDown size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <select
+              className="field-input !py-2 pl-8 pr-2 text-sm"
+              value={tri}
+              onChange={(e) => setTri(e.target.value as Tri)}
+            >
+              <option value="recent">Plus récents</option>
+              <option value="ancien">Plus anciens</option>
+              <option value="etat">Par état (priorité)</option>
+            </select>
+          </div>
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              className="field-input !py-2 pl-9 w-56"
+              placeholder="Rechercher (nom, dossier, CNI)"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 

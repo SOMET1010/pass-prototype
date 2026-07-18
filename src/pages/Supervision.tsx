@@ -15,12 +15,20 @@ function debutDeJournee(): string {
   return d.toISOString();
 }
 
+function debutSemaine(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - 6);
+  return d;
+}
+
 export function Supervision() {
   const [campagne, setCampagne] = useState<Campagne | null>(null);
   const [lignes, setLignes] = useState<Ligne[]>([]);
   const [journal, setJournal] = useState<JournalAudit[]>([]);
   const [stock, setStock] = useState(0);
   const [activiteAgents, setActiviteAgents] = useState<{ agent: Agent; enroles: number }[]>([]);
+  const [serie7j, setSerie7j] = useState<{ label: string; n: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,15 +42,18 @@ export function Supervision() {
         .limit(1)
         .maybeSingle();
       setCampagne(camp as Campagne);
-      const [{ data: dem }, { data: jr }, { count: stk }, { data: agents }, { data: demJour }] = await Promise.all([
-        camp
-          ? supabase.from("demande").select("etat, personne(zone_residence)").eq("id_campagne", (camp as Campagne).id_campagne)
-          : Promise.resolve({ data: [] as Ligne[] }),
-        supabase.from("journal_audit").select("*").order("horodatage", { ascending: false }).limit(15),
-        supabase.from("terminal").select("*", { count: "exact", head: true }).eq("statut", "en_stock"),
-        supabase.from("agent").select("*").order("role"),
-        supabase.from("demande").select("id_agent").gte("created_at", debut),
-      ]);
+      const semaine = debutSemaine();
+      const [{ data: dem }, { data: jr }, { count: stk }, { data: agents }, { data: demJour }, { data: demSemaine }] =
+        await Promise.all([
+          camp
+            ? supabase.from("demande").select("etat, personne(zone_residence)").eq("id_campagne", (camp as Campagne).id_campagne)
+            : Promise.resolve({ data: [] as Ligne[] }),
+          supabase.from("journal_audit").select("*").order("horodatage", { ascending: false }).limit(15),
+          supabase.from("terminal").select("*", { count: "exact", head: true }).eq("statut", "en_stock"),
+          supabase.from("agent").select("*").order("role"),
+          supabase.from("demande").select("id_agent").gte("created_at", debut),
+          supabase.from("demande").select("created_at").gte("created_at", semaine.toISOString()),
+        ]);
       setLignes((dem as Ligne[]) ?? []);
       setJournal((jr as JournalAudit[]) ?? []);
       setStock(stk ?? 0);
@@ -56,6 +67,23 @@ export function Supervision() {
           .filter((a) => a.role === "enrolement" || (compte.get(a.id_agent) ?? 0) > 0)
           .map((a) => ({ agent: a, enroles: compte.get(a.id_agent) ?? 0 })),
       );
+      // Série des 7 derniers jours (enrôlements par jour)
+      const jours: { label: string; n: number }[] = [];
+      const clefs: string[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - i);
+        clefs.push(d.toDateString());
+        jours.push({ label: d.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit" }), n: 0 });
+      }
+      for (const d of (demSemaine as { created_at: string }[]) ?? []) {
+        const k = new Date(d.created_at);
+        k.setHours(0, 0, 0, 0);
+        const idx = clefs.indexOf(k.toDateString());
+        if (idx >= 0) jours[idx].n += 1;
+      }
+      setSerie7j(jours);
       setLoading(false);
     })();
   }, []);
@@ -140,6 +168,33 @@ export function Supervision() {
           ))}
           {parZone.size === 0 && <p className="text-sm text-slate-400">Aucune zone couverte.</p>}
         </div>
+      </div>
+
+      {/* Courbe des enrôlements (7 derniers jours) */}
+      <div className="card p-5">
+        <h2 className="text-base font-semibold mb-4">Enrôlements des 7 derniers jours</h2>
+        {(() => {
+          const maxN = Math.max(1, ...serie7j.map((j) => j.n));
+          const total = serie7j.reduce((s, j) => s + j.n, 0);
+          return (
+            <>
+              <div className="flex items-end justify-between gap-2 h-36">
+                {serie7j.map((j, i) => (
+                  <div key={i} className="flex flex-1 flex-col items-center justify-end gap-1 h-full">
+                    <span className="text-xs font-semibold text-slate-500">{j.n > 0 ? j.n : ""}</span>
+                    <div
+                      className="w-full max-w-[42px] rounded-t bg-pass-blue transition-all"
+                      style={{ height: `${Math.max(4, (j.n / maxN) * 100)}%`, opacity: j.n === 0 ? 0.15 : 1 }}
+                      title={`${j.label} : ${j.n}`}
+                    />
+                    <span className="text-[11px] text-slate-400 capitalize whitespace-nowrap">{j.label}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-slate-400">Total sur la période : {total} enrôlement{total > 1 ? "s" : ""}.</p>
+            </>
+          );
+        })()}
       </div>
 
       {/* Enrôlements du jour par agent */}
