@@ -1,0 +1,8 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+bun.lockb
+# Le .env contient uniquement des clés publiques (anon) d'un projet de démonstration.
+# Il est versionné volontairement pour faciliter la reprise. Aucune donnée réelle.
