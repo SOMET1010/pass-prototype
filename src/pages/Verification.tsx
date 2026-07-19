@@ -143,7 +143,9 @@ export function Verification() {
     const pr = pointRecommande(pointsStock, personne.zone_residence);
     if (!pr) return toast("Aucun point de retrait avec stock à communiquer.", "error");
     const dest = personne.telephone_contact || numeroSimule(personne.numero_cni);
-    const msg = `PASS: Votre demande ${demande.numero_dossier} est validee. Retirez votre smartphone subventionne au ${pr.libelle} (${pr.zone}). Munissez-vous de votre piece d'identite.`;
+    const lieu = pr.adresse ? `${pr.libelle}, ${pr.adresse}` : `${pr.libelle} (${pr.zone})`;
+    const tel = pr.telephone ? ` Tel centre: ${pr.telephone}.` : "";
+    const msg = `PASS: Votre demande ${demande.numero_dossier} est validee. Retirez votre smartphone subventionne au ${lieu}.${tel} Munissez-vous de votre piece d'identite.`;
     setBusy(true);
     const { error } = await supabase.rpc("pass_notifier_sms", {
       p_id_demande: demande.id_demande,
@@ -368,6 +370,11 @@ export function Verification() {
                 <div>
                   <div className="text-sm font-semibold text-slate-800">
                     Point de retrait recommandé : {pointRetrait.libelle}
+                  </div>
+                  {pointRetrait.adresse && <div className="text-xs text-slate-500">{pointRetrait.adresse}</div>}
+                  <div className="text-xs text-slate-500">
+                    {pointRetrait.telephone && <>Tél. {pointRetrait.telephone} · </>}
+                    {pointRetrait.gestionnaire && <>Resp. {pointRetrait.gestionnaire}</>}
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5">
                     {pointRetrait.stock} terminal{pointRetrait.stock > 1 ? "s" : ""} en stock ·{" "}

@@ -94,6 +94,9 @@ export interface PointRetrait {
   libelle: string;
   zone: string;
   actif: boolean;
+  adresse: string | null;
+  telephone: string | null;
+  gestionnaire: string | null;
 }
 
 export interface StockPoint {
@@ -101,6 +104,9 @@ export interface StockPoint {
   libelle: string;
   zone: string;
   actif: boolean;
+  adresse: string | null;
+  telephone: string | null;
+  gestionnaire: string | null;
   stock: number;
   remis: number;
 }

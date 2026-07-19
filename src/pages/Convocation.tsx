@@ -73,6 +73,9 @@ export function Convocation() {
           <div>
             <div className="text-slate-500 text-xs">Lieu de retrait</div>
             <div className="font-semibold text-slate-800">{point ? point.libelle : "Centre à confirmer"}</div>
+            {point?.adresse && <div className="text-slate-600">{point.adresse}</div>}
+            {point?.telephone && <div className="text-slate-500 text-xs">Tél. {point.telephone}</div>}
+            {point?.gestionnaire && <div className="text-slate-500 text-xs">Responsable : {point.gestionnaire}</div>}
           </div>
           <CalendarClock size={18} className="text-pass-blue mt-0.5" />
           <div>

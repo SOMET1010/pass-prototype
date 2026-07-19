@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Warehouse, Package, AlertTriangle, MapPin, ArrowRightLeft, Loader2 } from "lucide-react";
+import { Warehouse, Package, AlertTriangle, MapPin, ArrowRightLeft, Loader2, Phone, UserCircle } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "../components/Toaster";
@@ -162,7 +162,7 @@ export function Stock() {
         {points.map((p) => {
           const bas = p.stock <= seuil;
           return (
-            <div key={p.id_point} className={`card p-4 ${bas ? "border-pass-orange/50" : ""}`}>
+            <div key={p.id_point} className={`card p-4 flex flex-col ${bas ? "border-pass-orange/50" : ""}`}>
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-semibold text-slate-800">{p.libelle}</div>
@@ -172,7 +172,30 @@ export function Stock() {
                   <Package size={18} />
                 </div>
               </div>
-              <div className="mt-3 flex items-end justify-between">
+
+              {/* Coordonnées du centre */}
+              <div className="mt-3 space-y-1.5 text-xs text-slate-500">
+                {p.adresse && (
+                  <div className="flex items-start gap-1.5">
+                    <MapPin size={13} className="mt-0.5 shrink-0 text-pass-blue" /> {p.adresse}
+                  </div>
+                )}
+                {p.gestionnaire && (
+                  <div className="flex items-center gap-1.5">
+                    <UserCircle size={13} className="shrink-0 text-pass-blue" /> {p.gestionnaire}
+                  </div>
+                )}
+                {p.telephone && (
+                  <div className="flex items-center gap-1.5">
+                    <Phone size={13} className="shrink-0 text-pass-blue" />
+                    <a href={`tel:${p.telephone.replace(/\s/g, "")}`} className="hover:text-pass-blue">
+                      {p.telephone}
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-slate-100 flex items-end justify-between">
                 <div>
                   <div className="text-2xl font-bold text-slate-800">{p.stock}</div>
                   <div className="text-xs text-slate-500">en stock · {p.remis} remis</div>

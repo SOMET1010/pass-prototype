@@ -150,3 +150,11 @@ update personne
  where numero_cni like 'CI-900-%';
 update personne set contact_relation = 'aucun', telephone_contact = null
  where numero_cni in ('CI-900-008','CI-900-024');
+
+-- ===== Coordonnées des centres de retrait (adresse, téléphone, gestionnaire) =====
+update point_retrait set adresse='Immeuble ANSUT, Bd Angoulvant, Plateau, Abidjan', telephone='+225 27 20 30 40 01', gestionnaire='M. KOUAMÉ Étienne' where id_point='88888888-8888-8888-8888-000000000001';
+update point_retrait set adresse='Mairie de Yopougon, Abidjan',                     telephone='+225 27 20 30 40 02', gestionnaire='Mme ADJOUA Sylvie'   where id_point='88888888-8888-8888-8888-000000000002';
+update point_retrait set adresse='Direction régionale ANSUT, Bouaké',              telephone='+225 27 31 30 40 03', gestionnaire='M. KONÉ Drissa'      where id_point='88888888-8888-8888-8888-000000000003';
+update point_retrait set adresse='Préfecture de Korhogo, quartier Résidentiel',    telephone='+225 27 36 30 40 04', gestionnaire='M. SILUÉ Bakary'     where id_point='88888888-8888-8888-8888-000000000004';
+update point_retrait set adresse='Mairie de Man, avenue de la Préfecture',         telephone='+225 27 33 30 40 05', gestionnaire='Mme GUÉU Rose'       where id_point='88888888-8888-8888-8888-000000000005';
+update point_retrait set adresse='Direction départementale ANSUT, Odienné',        telephone='+225 27 33 30 40 06', gestionnaire='M. DIABATÉ Sékou'    where id_point='88888888-8888-8888-8888-000000000006';
