@@ -98,6 +98,24 @@ export const LIBELLE_SAV_STATUT: Record<string, string> = {
   resolu: "Résolu",
 };
 
+/** Durée lisible à partir d'un nombre de secondes. */
+export function formatDuree(sec: number | null | undefined): string {
+  if (sec == null) return "—";
+  if (sec < 60) return `${sec} s`;
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m < 60) return `${m} min${s ? ` ${s}s` : ""}`;
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${h} h${mm ? ` ${mm} min` : ""}`;
+}
+
+/** Délai en secondes entre deux horodatages ISO (a → b). */
+export function delaiSecondes(a: string | null | undefined, b: string | null | undefined): number | null {
+  if (!a || !b) return null;
+  return Math.max(0, Math.round((new Date(b).getTime() - new Date(a).getTime()) / 1000));
+}
+
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   try {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Users, CheckCircle2, HelpCircle, XCircle, Gauge, ScrollText, Package, UserCog, Zap, Wrench, ShieldX } from "lucide-react";
+import { Users, CheckCircle2, HelpCircle, XCircle, Gauge, ScrollText, Package, UserCog, Zap, Wrench, ShieldX, Timer, Archive } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { formatDateHeure, LIBELLE_ROLE } from "../lib/rules";
+import { formatDateHeure, LIBELLE_ROLE, delaiSecondes } from "../lib/rules";
 import { CartographieDistribution } from "../components/CartographieDistribution";
 import { coordZone } from "../lib/zones";
 import { MapPin } from "lucide-react";
@@ -35,6 +35,7 @@ export function Supervision() {
   const [remises, setRemises] = useState({ total: 0, actives: 0 });
   const [carte, setCarte] = useState<{ zone: string; distribues: number; stock: number }[]>([]);
   const [savStats, setSavStats] = useState({ ouverts: 0, horsService: 0 });
+  const [sla, setSla] = useState({ enrolN: 0, enrolOk: 0, repN: 0, repOk: 0, clotures: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -81,6 +82,28 @@ export function Supervision() {
         supabase.from("terminal").select("*", { count: "exact", head: true }).in("statut", ["perdu", "bloque"]),
       ]);
       setSavStats({ ouverts: savOuv ?? 0, horsService: hs ?? 0 });
+      // Indicateurs SLA (enrôlement < 1 min, réponse ≤ 12 h) + clôtures
+      const campId = (camp as Campagne)?.id_campagne;
+      const [{ data: durs }, { data: decs }, { count: nClot }] = await Promise.all([
+        campId
+          ? supabase.from("demande").select("duree_enrolement_sec").eq("id_campagne", campId).not("duree_enrolement_sec", "is", null)
+          : Promise.resolve({ data: [] as { duree_enrolement_sec: number }[] }),
+        supabase.from("decision").select("horodatage, demande(date_soumission, id_campagne)"),
+        supabase.from("cloture").select("*", { count: "exact", head: true }),
+      ]);
+      const durList = (durs as { duree_enrolement_sec: number }[]) ?? [];
+      const decList = (decs as unknown as { horodatage: string; demande: { date_soumission: string | null; id_campagne: string } | null }[]) ?? [];
+      const repDelais = decList
+        .filter((d) => d.demande?.id_campagne === campId && d.demande?.date_soumission)
+        .map((d) => delaiSecondes(d.demande!.date_soumission, d.horodatage))
+        .filter((x): x is number => x != null);
+      setSla({
+        enrolN: durList.length,
+        enrolOk: durList.filter((d) => d.duree_enrolement_sec <= 60).length,
+        repN: repDelais.length,
+        repOk: repDelais.filter((s) => s <= 12 * 3600).length,
+        clotures: nClot ?? 0,
+      });
       setLignes((dem as Ligne[]) ?? []);
       setJournal((jr as JournalAudit[]) ?? []);
       setStock(stk ?? 0);
@@ -156,6 +179,35 @@ export function Supervision() {
         <Kpi icon={<Package size={18} />} label="En stock" value={stock} tone="slate" />
         <Kpi icon={<Wrench size={18} />} label="SAV ouverts" value={savStats.ouverts} tone="orange" />
         <Kpi icon={<ShieldX size={18} />} label="Hors service" value={savStats.horsService} tone="red" />
+      </div>
+
+      {/* Qualité de service (SLA) */}
+      <div className="card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Timer size={18} className="text-pass-blue" />
+          <h2 className="text-base font-semibold">Qualité de service (indicateurs de délai)</h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <SlaKpi
+            icon={<Timer size={16} />}
+            label="Enrôlements < 1 min"
+            pct={sla.enrolN ? Math.round((sla.enrolOk / sla.enrolN) * 100) : null}
+            detail={`${sla.enrolOk}/${sla.enrolN} enrôlements`}
+          />
+          <SlaKpi
+            icon={<CheckCircle2 size={16} />}
+            label="Réponses ≤ 12 h"
+            pct={sla.repN ? Math.round((sla.repOk / sla.repN) * 100) : null}
+            detail={`${sla.repOk}/${sla.repN} décisions`}
+          />
+          <SlaKpi
+            icon={<Archive size={16} />}
+            label="Opérations clôturées"
+            pct={null}
+            valeur={sla.clotures}
+            detail="après audit de la procédure"
+          />
+        </div>
       </div>
 
       {/* Avancement quota global */}
@@ -332,6 +384,34 @@ function Kpi({
       <div className={`grid h-9 w-9 place-items-center rounded-lg mb-2 ${tones[tone]}`}>{icon}</div>
       <div className="text-2xl font-bold text-slate-800">{value}</div>
       <div className="text-xs text-slate-500">{label}</div>
+    </div>
+  );
+}
+
+function SlaKpi({
+  icon,
+  label,
+  pct,
+  valeur,
+  detail,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  pct: number | null;
+  valeur?: number;
+  detail: string;
+}) {
+  const good = pct == null ? true : pct >= 80;
+  return (
+    <div className="rounded-lg border border-slate-200 p-4">
+      <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
+        {icon}
+        {label}
+      </div>
+      <div className={`text-2xl font-bold ${pct == null ? "text-slate-800" : good ? "text-emerald-600" : "text-amber-600"}`}>
+        {pct == null ? (valeur ?? 0) : `${pct}%`}
+      </div>
+      <div className="text-xs text-slate-400">{detail}</div>
     </div>
   );
 }

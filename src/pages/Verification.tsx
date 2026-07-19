@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2, MapPin, MessageSquare, Send, Wrench } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2, MapPin, MessageSquare, Send, Wrench, Timer, Archive } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
@@ -17,8 +17,10 @@ import {
   LIBELLE_CONTACT_RELATION,
   formatDate,
   formatDateHeure,
+  formatDuree,
+  delaiSecondes,
 } from "../lib/rules";
-import type { Demande, Personne, Verification as Verif, Decision, Distribution, StockPoint, Notification, SavTicket, Terminal, TypeSav } from "../lib/types";
+import type { Demande, Personne, Verification as Verif, Decision, Distribution, StockPoint, Notification, SavTicket, Terminal, TypeSav, Cloture } from "../lib/types";
 
 const ORDRE: Record<string, number> = { oneci: 0, rsu: 1, operateur: 2, historique: 3, imei: 4 };
 
@@ -41,10 +43,13 @@ export function Verification() {
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [terminalRemis, setTerminalRemis] = useState<Terminal | null>(null);
   const [savTickets, setSavTickets] = useState<SavTicket[]>([]);
+  const [cloture, setCloture] = useState<Cloture | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [refusMode, setRefusMode] = useState(false);
   const [motif, setMotif] = useState("");
+  const [clotConforme, setClotConforme] = useState(true);
+  const [clotObs, setClotObs] = useState("");
   const [incidentType, setIncidentType] = useState<TypeSav>("panne");
   const [incidentDesc, setIncidentDesc] = useState("");
   const [showIncident, setShowIncident] = useState(false);
@@ -58,20 +63,23 @@ export function Verification() {
       return;
     }
     setDemande(dem as Demande);
-    const [{ data: pers }, { data: vs }, { data: dec }, { data: dist }, { data: pts }, { data: nt }] = await Promise.all([
-      supabase.from("personne").select("*").eq("id_personne", (dem as Demande).id_personne).maybeSingle(),
-      supabase.from("verification").select("*").eq("id_demande", id),
-      supabase.from("decision").select("*").eq("id_demande", id).maybeSingle(),
-      supabase.from("distribution").select("*").eq("id_demande", id).maybeSingle(),
-      supabase.from("v_stock_points").select("*"),
-      supabase.from("notification").select("*").eq("id_demande", id).order("horodatage", { ascending: false }),
-    ]);
+    const [{ data: pers }, { data: vs }, { data: dec }, { data: dist }, { data: pts }, { data: nt }, { data: clot }] =
+      await Promise.all([
+        supabase.from("personne").select("*").eq("id_personne", (dem as Demande).id_personne).maybeSingle(),
+        supabase.from("verification").select("*").eq("id_demande", id),
+        supabase.from("decision").select("*").eq("id_demande", id).maybeSingle(),
+        supabase.from("distribution").select("*").eq("id_demande", id).maybeSingle(),
+        supabase.from("v_stock_points").select("*"),
+        supabase.from("notification").select("*").eq("id_demande", id).order("horodatage", { ascending: false }),
+        supabase.from("cloture").select("*").eq("id_demande", id).maybeSingle(),
+      ]);
     setPersonne(pers as Personne);
     setVerifs(((vs as Verif[]) ?? []).sort((a, b) => (ORDRE[a.source] ?? 9) - (ORDRE[b.source] ?? 9)));
     setDecision((dec as Decision) ?? null);
     setDistribution((dist as Distribution) ?? null);
     setPointsStock((pts as StockPoint[]) ?? []);
     setNotifs((nt as Notification[]) ?? []);
+    setCloture((clot as Cloture) ?? null);
     // SAV : terminal remis + tickets
     if (dist) {
       const distrib = dist as Distribution;
@@ -175,6 +183,21 @@ export function Verification() {
     charger();
   }
 
+  async function cloturer() {
+    if (!demande) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("pass_cloturer", {
+      p_id_demande: demande.id_demande,
+      p_conforme: clotConforme,
+      p_observations: clotObs || null,
+    });
+    setBusy(false);
+    if (error) return toast(error.message, "error");
+    toast("Opération clôturée après audit.", "success");
+    setClotObs("");
+    charger();
+  }
+
   if (loading) return <div className="text-slate-400">Chargement du dossier…</div>;
   if (!demande || !personne) return <div className="text-slate-500">Dossier introuvable.</div>;
 
@@ -188,6 +211,14 @@ export function Verification() {
   const sansContactTel = personne.contact_relation === "aucun" || !personne.telephone_contact;
   const destinataireContact = personne.telephone_contact || numeroSimule(personne.numero_cni);
   const relationLabel = personne.contact_relation ? LIBELLE_CONTACT_RELATION[personne.contact_relation] : "Non renseigné";
+
+  // Indicateurs de délai (SLA)
+  const delaiReponse = decision ? delaiSecondes(demande.date_soumission, decision.horodatage) : null;
+  const delaiRemise = decision && distribution ? delaiSecondes(decision.horodatage, distribution.date_remise) : null;
+  const enrolOK = demande.duree_enrolement_sec != null && demande.duree_enrolement_sec <= 60;
+  const reponseOK = delaiReponse != null && delaiReponse <= 12 * 3600;
+  const operationComplete = !!decision && (decision.sens === "refusee" || !!distribution);
+  const peutCloturer = agent?.role === "superviseur" || agent?.role === "instructeur";
 
   return (
     <div className="space-y-6">
@@ -569,6 +600,94 @@ export function Verification() {
         </div>
       )}
 
+      {/* Indicateurs de délai (SLA) */}
+      {(demande.date_soumission || demande.duree_enrolement_sec != null) && (
+        <div className="card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Timer size={18} className="text-pass-blue" />
+            <h2 className="text-base font-semibold">Indicateurs de délai (qualité de service)</h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <SlaTile label="Enrôlement" cible="Objectif < 1 min" valeur={formatDuree(demande.duree_enrolement_sec)} ok={demande.duree_enrolement_sec != null ? enrolOK : null} />
+            <SlaTile label="Réponse (décision)" cible="Objectif ≤ 12 h" valeur={formatDuree(delaiReponse)} ok={delaiReponse != null ? reponseOK : null} />
+            <SlaTile label="Remise du terminal" cible="Délai mesuré" valeur={formatDuree(delaiRemise)} ok={null} />
+          </div>
+        </div>
+      )}
+
+      {/* Clôture de l'opération (après audit) */}
+      {operationComplete && (
+        <div className="card p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Archive size={18} className="text-pass-blue" />
+              <h2 className="text-base font-semibold">Clôture de l'opération</h2>
+            </div>
+            {cloture && (
+              <span
+                className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                  cloture.conforme
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                    : "bg-red-50 text-red-700 border-red-300"
+                }`}
+              >
+                Clôturé — {cloture.conforme ? "conforme" : "non conforme"}
+              </span>
+            )}
+          </div>
+
+          {cloture ? (
+            <div className="text-sm text-slate-600">
+              Audit de la procédure réalisé le {formatDateHeure(cloture.horodatage)}.
+              {cloture.observations && <div className="mt-1">Observations : {cloture.observations}</div>}
+            </div>
+          ) : peutCloturer ? (
+            <>
+              <div className="rounded-lg border border-slate-200 p-3">
+                <div className="text-sm font-medium text-slate-700 mb-2">Audit de la procédure</div>
+                <ul className="space-y-1 text-sm">
+                  <AuditItem ok={personne.statut_verif_identite === "verifie" || verifs.some((v) => v.source === "oneci" && v.resultat === "concluant")}>
+                    Identité vérifiée
+                  </AuditItem>
+                  <AuditItem ok={demande.consentement}>Consentement recueilli</AuditItem>
+                  <AuditItem ok={!!decision}>Décision prononcée et motivée</AuditItem>
+                  {decision?.sens === "validee" && <AuditItem ok={!!distribution}>Remise effectuée et preuve constituée</AuditItem>}
+                  <AuditItem ok>Opérations tracées au journal d'audit</AuditItem>
+                </ul>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setClotConforme(true)}
+                  className={`rounded-md border px-3 py-2 text-sm ${clotConforme ? "border-emerald-400 bg-emerald-50 font-semibold text-emerald-700" : "border-slate-300"}`}
+                >
+                  Procédure conforme
+                </button>
+                <button
+                  onClick={() => setClotConforme(false)}
+                  className={`rounded-md border px-3 py-2 text-sm ${!clotConforme ? "border-red-400 bg-red-50 font-semibold text-red-700" : "border-slate-300"}`}
+                >
+                  Non conforme
+                </button>
+              </div>
+              <textarea
+                className="field-input"
+                rows={2}
+                placeholder="Observations d'audit (optionnel)"
+                value={clotObs}
+                onChange={(e) => setClotObs(e.target.value)}
+              />
+              <button onClick={cloturer} className="btn-primary" disabled={busy}>
+                {busy ? <Loader2 size={16} className="animate-spin" /> : <Archive size={16} />} Clôturer l'opération
+              </button>
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">
+              Opération complète — en attente de clôture après audit par l'instructeur / superviseur.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Consentement rappel */}
       <p className="text-xs text-slate-400">
         Consentement :{" "}
@@ -578,5 +697,33 @@ export function Verification() {
         .
       </p>
     </div>
+  );
+}
+
+function SlaTile({ label, cible, valeur, ok }: { label: string; cible: string; valeur: string; ok: boolean | null }) {
+  const tone =
+    ok === null
+      ? "bg-slate-50 text-slate-600 border-slate-200"
+      : ok
+        ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+        : "bg-amber-50 text-amber-700 border-amber-300";
+  return (
+    <div className={`rounded-lg border p-3 ${tone}`}>
+      <div className="text-xs uppercase tracking-wide font-semibold opacity-70">{label}</div>
+      <div className="text-xl font-bold mt-0.5">{valeur}</div>
+      <div className="text-[11px] mt-0.5 opacity-80">
+        {cible}
+        {ok !== null && (ok ? " · respecté" : " · dépassé")}
+      </div>
+    </div>
+  );
+}
+
+function AuditItem({ ok, children }: { ok: boolean; children: React.ReactNode }) {
+  return (
+    <li className="flex items-center gap-2">
+      {ok ? <CheckCircle2 size={15} className="text-emerald-600" /> : <XCircle size={15} className="text-red-500" />}
+      <span className={ok ? "text-slate-600" : "text-red-600"}>{children}</span>
+    </li>
   );
 }

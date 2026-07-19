@@ -158,3 +158,16 @@ update point_retrait set adresse='Direction régionale ANSUT, Bouaké',         
 update point_retrait set adresse='Préfecture de Korhogo, quartier Résidentiel',    telephone='+225 27 36 30 40 04', gestionnaire='M. SILUÉ Bakary'     where id_point='88888888-8888-8888-8888-000000000004';
 update point_retrait set adresse='Mairie de Man, avenue de la Préfecture',         telephone='+225 27 33 30 40 05', gestionnaire='Mme GUÉU Rose'       where id_point='88888888-8888-8888-8888-000000000005';
 update point_retrait set adresse='Direction départementale ANSUT, Odienné',        telephone='+225 27 33 30 40 06', gestionnaire='M. DIABATÉ Sékou'    where id_point='88888888-8888-8888-8888-000000000006';
+
+-- ===== Indicateurs SLA + clôtures de démonstration =====
+update demande set duree_enrolement_sec = 25 + (abs(hashtext(id_demande::text)) % 70)
+ where id_campagne = '44444444-4444-4444-4444-444444442026' and duree_enrolement_sec is null;
+
+insert into cloture(id_demande, conforme, observations, id_agent, horodatage)
+select d.id_demande, true, 'Procédure conforme — pièces, consentement, décision et preuve vérifiés.',
+       '11111111-1111-1111-1111-111111110004', d.created_at + interval '3 hours'
+from demande d
+where d.id_campagne='44444444-4444-4444-4444-444444442026'
+  and ((d.etat='validee' and exists(select 1 from distribution di where di.id_demande=d.id_demande)) or d.etat='refusee')
+  and not exists(select 1 from cloture c where c.id_demande=d.id_demande)
+limit 6;

@@ -203,10 +203,13 @@ export function Enrolement() {
         setBusy(false);
         return toast("Le consentement est obligatoire pour soumettre (RM-184).", "error");
       }
-      const { error } = await supabase.rpc("pass_soumettre_demande", { p_id_demande: demande.id_demande });
+      const secs = startedAt ? Math.round((Date.now() - startedAt) / 1000) : null;
+      const { error } = await supabase.rpc("pass_soumettre_demande", {
+        p_id_demande: demande.id_demande,
+        p_duree_sec: secs,
+      });
       setBusy(false);
       if (error) return toast(error.message, "error");
-      const secs = startedAt ? Math.round((Date.now() - startedAt) / 1000) : null;
       setDoneAt(Date.now());
       toast(secs !== null ? `Dossier soumis en ${secs} s. Passage à la vérification.` : "Dossier soumis.", "success");
       return navigate(`/verification/${demande.id_demande}`);

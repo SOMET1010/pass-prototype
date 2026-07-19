@@ -63,8 +63,18 @@ export interface Demande {
   consentement_moyen: MoyenConsentement | null;
   consentement_signature: string | null;
   consentement_temoin: string | null;
+  duree_enrolement_sec: number | null;
   date_soumission: string | null;
   created_at: string;
+}
+
+export interface Cloture {
+  id_cloture: string;
+  id_demande: string;
+  conforme: boolean;
+  observations: string | null;
+  id_agent: string;
+  horodatage: string;
 }
 
 export interface Verification {
