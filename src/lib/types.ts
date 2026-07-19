@@ -57,6 +57,8 @@ export interface Demande {
   recommandation: Recommandation | null;
   consentement: boolean;
   consentement_moyen: MoyenConsentement | null;
+  consentement_signature: string | null;
+  consentement_temoin: string | null;
   date_soumission: string | null;
   created_at: string;
 }

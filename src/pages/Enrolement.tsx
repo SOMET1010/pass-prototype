@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserPlus, IdCard, Camera, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
+import { UserPlus, IdCard, Camera, ShieldCheck, ArrowRight, Loader2, Eraser } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { fichierVersDataUrl } from "../lib/image";
 import { toast } from "../components/Toaster";
 import { SimuleBadge, ResultatIcon } from "../components/Badges";
 import { ParcoursStepper } from "../components/ParcoursStepper";
+import { SignaturePad, type SignaturePadHandle } from "../components/SignaturePad";
 import { LIBELLE_RESULTAT } from "../lib/rules";
 import type { Campagne, Demande, ResultatVerif, MoyenConsentement } from "../lib/types";
 
@@ -32,6 +33,9 @@ export function Enrolement() {
   const [identite, setIdentite] = useState<ResultatVerif | null>(null);
   const [moyen, setMoyen] = useState<MoyenConsentement>("signature");
   const [consent, setConsent] = useState(false);
+  const [temoin, setTemoin] = useState("");
+  const [otp, setOtp] = useState("");
+  const sigRef = useRef<SignaturePadHandle>(null);
   const [contactRelation, setContactRelation] = useState("menage");
   const [contactTel, setContactTel] = useState("");
   const [busy, setBusy] = useState(false);
@@ -111,10 +115,23 @@ export function Enrolement() {
       p_telephone: contactRelation === "aucun" ? null : contactTel,
       p_relation: contactRelation,
     });
+    const sig = moyen === "signature" ? sigRef.current?.toDataURL() ?? null : null;
+    if (soumettre && consent) {
+      if (moyen === "signature" && !sig) {
+        setBusy(false);
+        return toast("La signature du bénéficiaire est requise.", "error");
+      }
+      if (moyen === "assiste_temoin" && !temoin.trim()) {
+        setBusy(false);
+        return toast("Le nom du témoin est requis pour un consentement assisté.", "error");
+      }
+    }
     if (consent) {
       const { error } = await supabase.rpc("pass_enregistrer_consentement", {
         p_id_demande: demande.id_demande,
         p_moyen: moyen,
+        p_signature: sig,
+        p_temoin: moyen === "assiste_temoin" ? temoin : null,
       });
       if (error) {
         setBusy(false);
@@ -272,6 +289,50 @@ export function Enrolement() {
               « Assisté avec témoin » convient aux bénéficiaires ne pouvant lire, écrire ou signer.
             </p>
           </div>
+
+          {/* Capture selon le moyen choisi */}
+          {moyen === "signature" && (
+            <div>
+              <label className="field-label">Signature du bénéficiaire</label>
+              <SignaturePad ref={sigRef} />
+              <button
+                type="button"
+                onClick={() => sigRef.current?.clear()}
+                className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-pass-blue"
+              >
+                <Eraser size={12} /> Effacer
+              </button>
+            </div>
+          )}
+          {moyen === "assiste_temoin" && (
+            <div>
+              <label className="field-label">Nom et qualité du témoin</label>
+              <input
+                className="field-input"
+                value={temoin}
+                onChange={(e) => setTemoin(e.target.value)}
+                placeholder="Ex. KOUAKOU Jean, agent communautaire"
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                Le bénéficiaire ne signe pas : le témoin atteste du recueil du consentement (public analphabète).
+              </p>
+            </div>
+          )}
+          {moyen === "otp" && (
+            <div>
+              <label className="field-label">Code de confirmation (OTP)</label>
+              <input
+                className="field-input w-40 font-mono tracking-[0.4em]"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                placeholder="______"
+                maxLength={6}
+              />
+              <p className="mt-1 text-xs text-slate-400 flex items-center gap-1">
+                Code envoyé au contact du bénéficiaire <SimuleBadge />
+              </p>
+            </div>
+          )}
 
           <label className="flex items-start gap-2 text-sm">
             <input type="checkbox" className="mt-0.5" checked={consent} onChange={(e) => setConsent(e.target.checked)} />

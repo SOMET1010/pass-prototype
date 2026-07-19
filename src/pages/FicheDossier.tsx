@@ -107,7 +107,18 @@ export function FicheDossier() {
                   : "Non recueilli"
               }
             />
+            {demande.consentement_temoin && <Champ label="Témoin" valeur={demande.consentement_temoin} />}
           </Grille>
+          {demande.consentement_signature && (
+            <div className="mt-3">
+              <div className="text-[11px] uppercase tracking-wide text-slate-400 font-semibold">Signature</div>
+              <img
+                src={demande.consentement_signature}
+                alt="Signature du bénéficiaire"
+                className="h-20 rounded border border-slate-200 bg-white"
+              />
+            </div>
+          )}
         </Section>
 
         {/* Vérifications */}
