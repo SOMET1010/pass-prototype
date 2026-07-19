@@ -96,6 +96,8 @@ export function FicheDossier() {
           <Grille>
             <Champ label="Nom & prénoms" valeur={`${personne.nom} ${personne.prenoms}`} />
             <Champ label="Pièce d'identité (CNI)" valeur={personne.numero_cni} mono />
+            {personne.nni && <Champ label="NNI" valeur={personne.nni} mono />}
+            {personne.numero_cmu && <Champ label="N° carte CMU" valeur={personne.numero_cmu} mono />}
             <Champ label="Date de naissance" valeur={formatDate(personne.date_naissance)} />
             <Champ label="Zone de résidence" valeur={personne.zone_residence} />
             <Champ label="Numéro PASS" valeur={personne.id_personne.slice(0, 8).toUpperCase()} mono />

@@ -24,6 +24,10 @@ export interface Agent {
 export interface Personne {
   id_personne: string;
   numero_cni: string;
+  nni: string | null;
+  numero_cmu: string | null;
+  piece_photo_url: string | null;
+  cmu_photo_url: string | null;
   nom: string;
   prenoms: string;
   date_naissance: string;

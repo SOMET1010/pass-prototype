@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserPlus, IdCard, Camera, ShieldCheck, ArrowRight, Loader2, Eraser } from "lucide-react";
+import { UserPlus, IdCard, Camera, ShieldCheck, ArrowRight, Loader2, Eraser, ScanLine } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { fichierVersDataUrl } from "../lib/image";
 import { toast } from "../components/Toaster";
@@ -11,11 +11,11 @@ import { LIBELLE_RESULTAT } from "../lib/rules";
 import type { Campagne, Demande, ResultatVerif, MoyenConsentement } from "../lib/types";
 
 const PERSONAS = [
-  { label: "Mariam KOUASSI", nom: "KOUASSI", prenoms: "Mariam", cni: "CI-001-334455", dn: "1972-04-12", zone: "Korhogo" },
-  { label: "Adama TRAORÉ", nom: "TRAORÉ", prenoms: "Adama", cni: "CI-002-778899", dn: "1994-09-03", zone: "Bouaké" },
-  { label: "Awa DIALLO", nom: "DIALLO", prenoms: "Awa", cni: "CI-003-112233", dn: "1988-01-20", zone: "Man" },
-  { label: "Koffi Yao", nom: "KOFFI YAO", prenoms: "N'GUESSAN", cni: "CI-004-556677", dn: "1965-11-30", zone: "Odienné" },
-  { label: "Fatou COULIBALY", nom: "COULIBALY", prenoms: "Fatou", cni: "CI-005-990011", dn: "1970-06-15", zone: "Korhogo" },
+  { label: "Mariam KOUASSI", nom: "KOUASSI", prenoms: "Mariam", cni: "CI-001-334455", nni: "10001334455", cmu: "CMU-2020-334455", dn: "1972-04-12", zone: "Korhogo" },
+  { label: "Adama TRAORÉ", nom: "TRAORÉ", prenoms: "Adama", cni: "CI-002-778899", nni: "10002778899", cmu: "", dn: "1994-09-03", zone: "Bouaké" },
+  { label: "Awa DIALLO", nom: "DIALLO", prenoms: "Awa", cni: "CI-003-112233", nni: "10003112233", cmu: "", dn: "1988-01-20", zone: "Man" },
+  { label: "Koffi Yao", nom: "KOFFI YAO", prenoms: "N'GUESSAN", cni: "CI-004-556677", nni: "10004556677", cmu: "", dn: "1965-11-30", zone: "Odienné" },
+  { label: "Fatou COULIBALY", nom: "COULIBALY", prenoms: "Fatou", cni: "CI-005-990011", nni: "10005990011", cmu: "CMU-2021-990011", dn: "1970-06-15", zone: "Korhogo" },
 ];
 
 export function Enrolement() {
@@ -23,11 +23,18 @@ export function Enrolement() {
   const [campagne, setCampagne] = useState<Campagne | null>(null);
 
   const [cni, setCni] = useState("");
+  const [nni, setNni] = useState("");
+  const [cmu, setCmu] = useState("");
   const [nom, setNom] = useState("");
   const [prenoms, setPrenoms] = useState("");
   const [dn, setDn] = useState("");
   const [zone, setZone] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
+  const [piecePhoto, setPiecePhoto] = useState<string | null>(null);
+  const [cmuPhoto, setCmuPhoto] = useState<string | null>(null);
+  const [pieceScan, setPieceScan] = useState(false);
+  const [cmuScan, setCmuScan] = useState(false);
+  const [cmuDispo, setCmuDispo] = useState("");
 
   const [demande, setDemande] = useState<Demande | null>(null);
   const [identite, setIdentite] = useState<ResultatVerif | null>(null);
@@ -53,22 +60,42 @@ export function Enrolement() {
 
   const champsComplets = cni.trim() && nom.trim() && prenoms.trim() && dn && zone.trim();
 
-  function chargerPersona(p: (typeof PERSONAS)[number]) {
+  // Simule la lecture automatique (OCR) d'une pièce d'identité de démonstration.
+  function scannerPiece(p: (typeof PERSONAS)[number]) {
     setCni(p.cni);
+    setNni(p.nni);
     setNom(p.nom);
     setPrenoms(p.prenoms);
     setDn(p.dn);
     setZone(p.zone);
+    setPieceScan(true);
+    setCmuDispo(p.cmu);
+    setCmu("");
+    setCmuScan(false);
+    toast("Pièce lue : informations extraites automatiquement (simulé).", "success");
   }
 
-  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+  // Simule la lecture de la carte CMU (éligibilité sociale).
+  function scannerCmu() {
+    if (!pieceScan) return toast("Scannez d'abord une pièce d'identité de démonstration.", "info");
+    if (!cmuDispo) return toast("Aucune carte CMU détectée pour ce bénéficiaire.", "info");
+    setCmu(cmuDispo);
+    setCmuScan(true);
+    toast("Carte CMU lue : ayant droit confirmé (simulé).", "success");
+  }
+
+  async function lireImage(e: React.ChangeEvent<HTMLInputElement>, set: (v: string) => void) {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      setPhoto(await fichierVersDataUrl(file));
+      set(await fichierVersDataUrl(file));
     } catch {
       toast("Impossible de lire l'image.", "error");
     }
+  }
+
+  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    await lireImage(e, setPhoto);
   }
 
   async function verifierIdentite() {
@@ -95,6 +122,14 @@ export function Enrolement() {
       toast("Une demande existe déjà pour cette personne sur la campagne. Ouverture du dossier…", "info");
       return navigate(`/verification/${dem.id_demande}`);
     }
+    // Enregistre les données de pièce lues (NNI, n° CMU, photos des pièces)
+    await supabase.rpc("pass_maj_piece", {
+      p_id_personne: dem.id_personne,
+      p_nni: nni || null,
+      p_numero_cmu: cmu || null,
+      p_piece_photo_url: piecePhoto,
+      p_cmu_photo_url: cmuPhoto,
+    });
     // Lance les vérifications (identité ONECI simulée + autres) et calcule la recommandation.
     const { data: verif, error: e2 } = await supabase.rpc("pass_lancer_verifications", {
       p_id_demande: dem.id_demande,
@@ -173,19 +208,51 @@ export function Enrolement() {
         </div>
       </div>
 
-      {/* Aide démo */}
-      <div className="card p-3 flex flex-wrap items-center gap-2 bg-slate-50">
-        <span className="text-xs font-semibold text-slate-500">Charger un persona&nbsp;:</span>
-        {PERSONAS.map((p) => (
-          <button
-            key={p.cni}
-            onClick={() => chargerPersona(p)}
-            disabled={!!demande}
-            className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-pass-blue hover:bg-pass-blue-light disabled:opacity-40"
-          >
-            {p.label}
+      {/* Scan de pièce (lecture automatique simulée) */}
+      <div className="card p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <ScanLine size={18} className="text-pass-blue" />
+          <h2 className="text-base font-semibold">Lecture automatique des pièces</h2>
+          <SimuleBadge />
+        </div>
+        <p className="text-xs text-slate-400">
+          Photographiez la pièce pour pré-remplir les champs (nom, prénoms, date de naissance, N° de pièce, NNI). La
+          reconnaissance (OCR / ONECI) est <strong>simulée</strong> dans ce prototype. Choisissez une pièce de
+          démonstration :
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {PERSONAS.map((p) => (
+            <button
+              key={p.cni}
+              onClick={() => scannerPiece(p)}
+              disabled={!!demande}
+              className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-pass-blue hover:bg-pass-blue-light disabled:opacity-40"
+            >
+              <IdCard size={13} /> {p.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button onClick={scannerCmu} disabled={!!demande || !pieceScan} className="btn-ghost !py-2 text-sm">
+            <ScanLine size={15} /> Scanner la carte CMU
           </button>
-        ))}
+          <label className="btn-ghost !py-2 text-sm cursor-pointer">
+            <Camera size={15} /> Photo pièce (CNI)
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => lireImage(e, setPiecePhoto)} disabled={!!demande} />
+          </label>
+          <label className="btn-ghost !py-2 text-sm cursor-pointer">
+            <Camera size={15} /> Photo carte CMU
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => lireImage(e, setCmuPhoto)} disabled={!!demande} />
+          </label>
+        </div>
+        {(pieceScan || cmuScan) && (
+          <div className="flex flex-wrap items-center gap-3 rounded-md bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs text-emerald-800">
+            {pieceScan && <span>✓ Pièce d'identité lue (NNI {nni || "—"})</span>}
+            {cmuScan && <span>✓ Carte CMU lue ({cmu})</span>}
+            {piecePhoto && <span>✓ Photo CNI jointe</span>}
+            {cmuPhoto && <span>✓ Photo CMU jointe</span>}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -195,9 +262,13 @@ export function Enrolement() {
             <IdCard size={18} className="text-pass-blue" /> Identité du demandeur
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
+            <div>
               <label className="field-label">Numéro de pièce d'identité (CNI) *</label>
               <input className="field-input font-mono" value={cni} onChange={(e) => setCni(e.target.value)} disabled={!!demande} placeholder="CI-000-000000" />
+            </div>
+            <div>
+              <label className="field-label">NNI (N° National d'Identification)</label>
+              <input className="field-input font-mono" value={nni} onChange={(e) => setNni(e.target.value)} disabled={!!demande} placeholder="Lu automatiquement" />
             </div>
             <div>
               <label className="field-label">Nom *</label>
@@ -214,6 +285,10 @@ export function Enrolement() {
             <div>
               <label className="field-label">Zone de résidence *</label>
               <input className="field-input" value={zone} onChange={(e) => setZone(e.target.value)} disabled={!!demande} placeholder="Ex. Korhogo" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="field-label">N° carte CMU (éligibilité sociale)</label>
+              <input className="field-input font-mono" value={cmu} onChange={(e) => setCmu(e.target.value)} disabled={!!demande} placeholder="Lu via la carte CMU (optionnel)" />
             </div>
           </div>
 
