@@ -79,7 +79,7 @@ export function Recu() {
             </div>
             <div>
               <div className="font-bold text-pass-blue-dark text-lg leading-tight">Reçu PASS</div>
-              <div className="text-[11px] text-slate-500">Programme d'Accès au Smartphone Subventionné · ANSUT</div>
+              <div className="text-[11px] text-slate-500">Programme d'Accès aux Smartphones Subventionnés · ANSUT</div>
             </div>
           </div>
           <div className="text-emerald-600 flex items-center gap-1 text-sm font-semibold">

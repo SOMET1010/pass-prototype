@@ -57,7 +57,7 @@ export function Layout({ children }: { children: ReactNode }) {
             </div>
             <div className="leading-tight">
               <div className="font-bold text-pass-blue-dark text-lg">PASS</div>
-              <div className="text-[11px] text-slate-500 -mt-0.5">Accès au Smartphone Subventionné · ANSUT</div>
+              <div className="text-[11px] text-slate-500 -mt-0.5">Accès aux Smartphones Subventionnés · ANSUT</div>
             </div>
           </div>
           {agent && (
@@ -97,7 +97,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">{children}</main>
 
       <footer className="no-print border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400">
-        Prototype PASS · ANSUT — Programme d'Accès au Smartphone Subventionné · Données fictives
+        Prototype PASS · ANSUT — Programme d'Accès aux Smartphones Subventionnés · Données fictives
       </footer>
     </div>
   );

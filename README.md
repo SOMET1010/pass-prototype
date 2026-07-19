@@ -1,4 +1,4 @@
-# Prototype PASS — Plateforme du Programme d'Accès au Smartphone Subventionné
+# Prototype PASS — Plateforme du Programme d'Accès aux Smartphones Subventionnés
 
 > **Prototype de démonstration** porté par l'ANSUT. Vérifications simulées, données
 > fictives, hébergement non souverain. **Non destiné à la production.**

@@ -79,7 +79,7 @@ export function FicheDossier() {
         <div className="flex items-start justify-between border-b border-slate-200 pb-4">
           <div>
             <div className="text-lg font-bold text-pass-blue-dark">Dossier PASS — Pièce probante</div>
-            <div className="text-xs text-slate-500">Programme d'Accès au Smartphone Subventionné · ANSUT</div>
+            <div className="text-xs text-slate-500">Programme d'Accès aux Smartphones Subventionnés · ANSUT</div>
           </div>
           <div className="text-right">
             <div className="font-mono text-sm font-semibold">{demande.numero_dossier}</div>

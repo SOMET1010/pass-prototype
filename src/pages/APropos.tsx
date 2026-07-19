@@ -61,7 +61,7 @@ export function APropos() {
       <section className="card p-5">
         <h2 className="text-base font-semibold mb-2">Programme PASS</h2>
         <p className="text-sm text-slate-600 leading-relaxed">
-          Le Programme d'Accès au Smartphone Subventionné est porté par l'ANSUT (Agence Nationale du Service Universel des
+          Le Programme d'Accès aux Smartphones Subventionnés est porté par l'ANSUT (Agence Nationale du Service Universel des
           Télécommunications/TIC). Il subventionne l'acquisition de smartphones pour des bénéficiaires identifiés,
           prioritairement les ayants droit des programmes sociaux publics, afin de réduire la fracture numérique
           individuelle.

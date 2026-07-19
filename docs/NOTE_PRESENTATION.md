@@ -1,6 +1,6 @@
 # Programme PASS — Note de présentation du prototype
 
-**Programme d'Accès au Smartphone Subventionné (PASS) · ANSUT**
+**Programme d'Accès aux Smartphones Subventionnés (PASS) · ANSUT**
 *Prototype de démonstration — vérifications simulées, données fictives, non destiné à la production.*
 
 ---

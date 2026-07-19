@@ -46,7 +46,7 @@ export function Login() {
             </div>
             <h1 className="text-2xl font-bold text-pass-blue-dark">Plateforme PASS</h1>
             <p className="text-sm text-slate-500 text-center">
-              Programme d'Accès au Smartphone Subventionné · ANSUT
+              Programme d'Accès aux Smartphones Subventionnés · ANSUT
             </p>
           </div>
 
