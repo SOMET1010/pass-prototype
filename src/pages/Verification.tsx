@@ -166,6 +166,22 @@ export function Verification() {
     charger();
   }
 
+  async function notifierRefus() {
+    if (!demande || !personne || !decision) return;
+    const dest = personne.telephone_contact || numeroSimule(personne.numero_cni);
+    const msg = `PASS: Votre demande ${demande.numero_dossier} n'a pas ete retenue. Motif: ${decision.motif}. Recours possible sous 30 jours: recours@ansut.ci / +225 27 20 00 00 00.`;
+    setBusy(true);
+    const { error } = await supabase.rpc("pass_notifier_sms", {
+      p_id_demande: demande.id_demande,
+      p_destinataire: dest,
+      p_message: msg,
+    });
+    setBusy(false);
+    if (error) return toast(error.message, "error");
+    toast("Notification de refus envoyée (simulé).", "success");
+    charger();
+  }
+
   async function declarerIncident() {
     if (!distribution) return;
     setBusy(true);
@@ -312,8 +328,17 @@ export function Verification() {
               <div className="mt-2 text-sm text-red-800">
                 <span className="font-medium">Motif :</span> {decision!.motif}
                 <div className="mt-1 text-xs text-red-600">
-                  Voie de recours : le bénéficiaire peut contester cette décision auprès du centre d'enrôlement dans un
-                  délai de 30 jours.
+                  Voie de recours : le bénéficiaire peut contester cette décision sous 30 jours (Cellule de recours PASS
+                  ou centre d'enrôlement).
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link to={`/avis/${demande.id_demande}`} className="btn-ghost !py-1.5 text-sm">
+                    <FileText size={15} /> Avis de rejet (à remettre)
+                  </Link>
+                  <button onClick={notifierRefus} className="btn-ghost !py-1.5 text-sm" disabled={busy}>
+                    {busy ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Notifier le refus (SMS)
+                    <SimuleBadge />
+                  </button>
                 </div>
               </div>
             )}

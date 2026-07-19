@@ -12,6 +12,7 @@ import { Sav } from "./pages/Sav";
 import { Verification } from "./pages/Verification";
 import { FicheDossier } from "./pages/FicheDossier";
 import { Convocation } from "./pages/Convocation";
+import { Avis } from "./pages/Avis";
 import { Remise } from "./pages/Remise";
 import { Recu } from "./pages/Recu";
 import { Supervision } from "./pages/Supervision";
@@ -45,6 +46,7 @@ export default function App() {
       <Route path="/verification/:id" element={<Protected><Verification /></Protected>} />
       <Route path="/fiche/:id" element={<Protected><FicheDossier /></Protected>} />
       <Route path="/convocation/:id" element={<Protected><Convocation /></Protected>} />
+      <Route path="/avis/:id" element={<Protected><Avis /></Protected>} />
       <Route path="/remise/:id" element={<Protected><Remise /></Protected>} />
       <Route path="/recu/:id" element={<Protected><Recu /></Protected>} />
       <Route path="/supervision" element={<Protected><Supervision /></Protected>} />
