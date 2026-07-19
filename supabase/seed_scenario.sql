@@ -98,3 +98,27 @@ begin
        (select id_terminal, (row_number() over (order by imei)) % 6 as m from terminal where statut='en_stock') t
   where te.id_terminal = t.id_terminal and p.idx = t.m;
 end$$;
+
+-- Génère les 4 contrôles (dont opérateur / ligne mobile) pour les dossiers 2026 sans vérifications,
+-- de façon cohérente avec la recommandation (opérateur non concluant pour les cas « à instruire »).
+insert into verification (id_demande, source, resultat, est_simule, donnees_retour)
+select d.id_demande,
+       s.source::verification_source,
+       (case when s.source = 'operateur' and d.recommandation = 'a_instruire' then 'non_concluant'
+             else 'concluant' end)::verification_resultat,
+       (s.source <> 'historique'),
+       case s.source
+         when 'oneci' then jsonb_build_object('libelle','Identité / pièce','detail','CNI valide, pas d''usurpation')
+         when 'rsu' then jsonb_build_object('libelle','Éligibilité sociale','detail','Inscrit(e) au registre social')
+         when 'operateur' then jsonb_build_object(
+              'libelle','Ligne mobile',
+              'nom_operateur', (array['Orange CI','MTN CI','Moov Africa'])[1 + (abs(hashtext(d.id_demande::text)) % 3)],
+              'detail_ligne', case when d.recommandation = 'a_instruire'
+                                   then 'Titulaire non concordant / ligne non retrouvée à ce nom'
+                                   else 'Ligne active, titulaire concordant' end)
+         else jsonb_build_object('libelle','Historique PASS (référentiel interne)','detail','Aucune attribution antérieure')
+       end
+from demande d
+cross join (values ('oneci'),('rsu'),('operateur'),('historique')) as s(source)
+where d.id_campagne = '44444444-4444-4444-4444-444444442026'
+  and not exists (select 1 from verification v where v.id_demande = d.id_demande);
