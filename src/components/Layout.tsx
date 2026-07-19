@@ -7,6 +7,7 @@ import {
   Gavel,
   Search,
   Warehouse,
+  Wrench,
   Info,
   LogOut,
   ShieldAlert,
@@ -22,6 +23,7 @@ const NAV = [
   { to: "/instruction", label: "Instruction", icon: Gavel },
   { to: "/recherche", label: "Recherche", icon: Search },
   { to: "/stock", label: "Stock", icon: Warehouse },
+  { to: "/sav", label: "SAV", icon: Wrench },
   { to: "/supervision", label: "Supervision", icon: LayoutDashboard },
   { to: "/a-propos", label: "À propos", icon: Info },
 ];

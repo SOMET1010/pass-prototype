@@ -122,3 +122,21 @@ from demande d
 cross join (values ('oneci'),('rsu'),('operateur'),('historique')) as s(source)
 where d.id_campagne = '44444444-4444-4444-4444-444444442026'
   and not exists (select 1 from verification v where v.id_demande = d.id_demande);
+
+-- ===== Tickets SAV de démonstration =====
+insert into sav_ticket(id_distribution, type_incident, statut, description, id_agent, created_at)
+select d.id_distribution, 'panne'::sav_type, 'ouvert'::sav_statut,
+       'Écran fissuré après une chute ; le tactile ne répond plus.', '11111111-1111-1111-1111-111111110003', now() - interval '1 day'
+from distribution d join demande dm on dm.id_demande=d.id_demande join personne p on p.id_personne=dm.id_personne
+where p.numero_cni='CI-900-005';
+
+with tk as (
+  insert into sav_ticket(id_distribution, type_incident, statut, description, id_agent, created_at)
+  select d.id_distribution, 'vol'::sav_type, 'en_cours'::sav_statut,
+         'Téléphone dérobé au marché ; plainte déposée à la gendarmerie.', '11111111-1111-1111-1111-111111110004', now() - interval '2 days'
+  from distribution d join demande dm on dm.id_demande=d.id_demande join personne p on p.id_personne=dm.id_personne
+  where p.numero_cni='CI-900-011'
+  returning id_distribution
+)
+update terminal set statut='bloque'
+where id_terminal in (select id_terminal from distribution where id_distribution in (select id_distribution from tk));

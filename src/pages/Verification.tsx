@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2, MapPin, MessageSquare, Send } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2, MapPin, MessageSquare, Send, Wrench } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
@@ -11,10 +11,13 @@ import {
   LIBELLE_SOURCE,
   LIBELLE_RESULTAT,
   LIBELLE_MOYEN_CONSENT,
+  LIBELLE_STATUT_TERMINAL,
+  LIBELLE_SAV_TYPE,
+  LIBELLE_SAV_STATUT,
   formatDate,
   formatDateHeure,
 } from "../lib/rules";
-import type { Demande, Personne, Verification as Verif, Decision, Distribution, StockPoint, Notification } from "../lib/types";
+import type { Demande, Personne, Verification as Verif, Decision, Distribution, StockPoint, Notification, SavTicket, Terminal, TypeSav } from "../lib/types";
 
 const ORDRE: Record<string, number> = { oneci: 0, rsu: 1, operateur: 2, historique: 3, imei: 4 };
 
@@ -35,10 +38,15 @@ export function Verification() {
   const [distribution, setDistribution] = useState<Distribution | null>(null);
   const [pointsStock, setPointsStock] = useState<StockPoint[]>([]);
   const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [terminalRemis, setTerminalRemis] = useState<Terminal | null>(null);
+  const [savTickets, setSavTickets] = useState<SavTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [refusMode, setRefusMode] = useState(false);
   const [motif, setMotif] = useState("");
+  const [incidentType, setIncidentType] = useState<TypeSav>("panne");
+  const [incidentDesc, setIncidentDesc] = useState("");
+  const [showIncident, setShowIncident] = useState(false);
 
   const charger = useCallback(async () => {
     if (!id) return;
@@ -63,6 +71,19 @@ export function Verification() {
     setDistribution((dist as Distribution) ?? null);
     setPointsStock((pts as StockPoint[]) ?? []);
     setNotifs((nt as Notification[]) ?? []);
+    // SAV : terminal remis + tickets
+    if (dist) {
+      const distrib = dist as Distribution;
+      const [{ data: term }, { data: sav }] = await Promise.all([
+        supabase.from("terminal").select("*").eq("id_terminal", distrib.id_terminal).maybeSingle(),
+        supabase.from("sav_ticket").select("*").eq("id_distribution", distrib.id_distribution).order("created_at", { ascending: false }),
+      ]);
+      setTerminalRemis((term as Terminal) ?? null);
+      setSavTickets((sav as SavTicket[]) ?? []);
+    } else {
+      setTerminalRemis(null);
+      setSavTickets([]);
+    }
     setLoading(false);
   }, [id]);
 
@@ -131,6 +152,23 @@ export function Verification() {
     setBusy(false);
     if (error) return toast(error.message, "error");
     toast("SMS simulé envoyé au bénéficiaire.", "success");
+    charger();
+  }
+
+  async function declarerIncident() {
+    if (!distribution) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("pass_ouvrir_sav", {
+      p_id_distribution: distribution.id_distribution,
+      p_type: incidentType,
+      p_description: incidentDesc || null,
+    });
+    setBusy(false);
+    if (error) return toast(error.message, "error");
+    toast("Incident SAV enregistré.", "success");
+    setShowIncident(false);
+    setIncidentDesc("");
+    setIncidentType("panne");
     charger();
   }
 
@@ -412,6 +450,93 @@ export function Verification() {
                   <p className="text-sm text-slate-700 mt-1">{n.message}</p>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Suivi après remise (SAV) */}
+      {distribution && terminalRemis && (
+        <div className="card p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Wrench size={18} className="text-pass-blue" />
+              <h2 className="text-base font-semibold">Suivi après remise (SAV)</h2>
+            </div>
+            <span
+              className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+                terminalRemis.statut === "remis"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                  : "bg-red-50 text-red-700 border-red-300"
+              }`}
+            >
+              Terminal : {LIBELLE_STATUT_TERMINAL[terminalRemis.statut]}
+            </span>
+          </div>
+          <div className="text-sm text-slate-500">
+            {terminalRemis.modele} · IMEI <span className="font-mono">{terminalRemis.imei}</span>
+          </div>
+
+          {agent && agent.role !== "enrolement" && (
+            !showIncident ? (
+              <button onClick={() => setShowIncident(true)} className="btn-ghost">
+                <Wrench size={16} /> Déclarer un incident
+              </button>
+            ) : (
+              <div className="rounded-lg border border-slate-200 p-4 space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {(["perte", "vol", "panne", "autre"] as TypeSav[]).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setIncidentType(t)}
+                      className={`rounded-md border px-3 py-2 text-sm ${
+                        incidentType === t ? "border-pass-blue bg-pass-blue-light font-semibold text-pass-blue" : "border-slate-300"
+                      }`}
+                    >
+                      {LIBELLE_SAV_TYPE[t]}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  className="field-input"
+                  rows={2}
+                  placeholder="Description de l'incident"
+                  value={incidentDesc}
+                  onChange={(e) => setIncidentDesc(e.target.value)}
+                />
+                <p className="text-xs text-slate-400">
+                  « Vol » bloque le terminal (IMEI) contre la revente ; « Perte » le marque comme perdu.
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={declarerIncident} className="btn-primary" disabled={busy}>
+                    {busy ? <Loader2 size={16} className="animate-spin" /> : <Wrench size={16} />} Enregistrer l'incident
+                  </button>
+                  <button onClick={() => setShowIncident(false)} className="btn-ghost" disabled={busy}>
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )
+          )}
+
+          {savTickets.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Incidents</div>
+              {savTickets.map((t) => (
+                <div key={t.id_ticket} className="rounded-lg border border-slate-200 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700">
+                      {LIBELLE_SAV_TYPE[t.type_incident]} — {LIBELLE_SAV_STATUT[t.statut]}
+                    </span>
+                    <span className="text-xs text-slate-400">{formatDateHeure(t.created_at)}</span>
+                  </div>
+                  {t.description && <p className="text-sm text-slate-600 mt-1">{t.description}</p>}
+                  {t.resolution && <p className="text-sm text-emerald-700 mt-1">Résolution : {t.resolution}</p>}
+                </div>
+              ))}
+              <Link to="/sav" className="text-sm text-pass-blue hover:underline">
+                Ouvrir le module SAV →
+              </Link>
             </div>
           )}
         </div>

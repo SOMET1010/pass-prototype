@@ -70,6 +70,26 @@ export const LIBELLE_MOYEN_CONSENT: Record<string, string> = {
   otp: "Code OTP",
 };
 
+export const LIBELLE_STATUT_TERMINAL: Record<string, string> = {
+  en_stock: "En stock",
+  remis: "Remis",
+  perdu: "Perdu",
+  bloque: "Bloqué",
+};
+
+export const LIBELLE_SAV_TYPE: Record<string, string> = {
+  perte: "Perte",
+  vol: "Vol",
+  panne: "Panne",
+  autre: "Autre",
+};
+
+export const LIBELLE_SAV_STATUT: Record<string, string> = {
+  ouvert: "Ouvert",
+  en_cours: "En cours",
+  resolu: "Résolu",
+};
+
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   try {

@@ -113,6 +113,21 @@ export interface Distribution {
   statut_activation: "non_active" | "active";
 }
 
+export type TypeSav = "perte" | "vol" | "panne" | "autre";
+export type StatutSav = "ouvert" | "en_cours" | "resolu";
+
+export interface SavTicket {
+  id_ticket: string;
+  id_distribution: string;
+  type_incident: TypeSav;
+  statut: StatutSav;
+  description: string | null;
+  resolution: string | null;
+  id_agent: string;
+  created_at: string;
+  resolved_at: string | null;
+}
+
 export interface Notification {
   id_notification: string;
   id_demande: string;
