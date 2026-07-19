@@ -6,6 +6,7 @@ import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
 import { ParcoursStepper } from "../components/ParcoursStepper";
 import { pointRecommande } from "../lib/zones";
+import { envoyerNotification } from "../lib/ansut";
 import { useAuth } from "../context/AuthContext";
 import {
   LIBELLE_SOURCE,
@@ -155,15 +156,34 @@ export function Verification() {
     const tel = pr.telephone ? ` Tel centre: ${pr.telephone}.` : "";
     const msg = `PASS: Votre demande ${demande.numero_dossier} est validee. Retirez votre smartphone subventionne au ${lieu}.${tel} Munissez-vous de votre piece d'identite.`;
     setBusy(true);
-    const { error } = await supabase.rpc("pass_notifier_sms", {
+    const { data, error } = await supabase.rpc("pass_notifier_sms", {
       p_id_demande: demande.id_demande,
       p_destinataire: dest,
       p_message: msg,
     });
+    if (error) {
+      setBusy(false);
+      return toast(error.message, "error");
+    }
+    await dispatcherEtToaster(data as Notification, "au bénéficiaire");
     setBusy(false);
-    if (error) return toast(error.message, "error");
-    toast("SMS simulé envoyé au bénéficiaire.", "success");
     charger();
+  }
+
+  // Expédie la notification via la passerelle ANSUT Hub et informe l'agent du mode réel/simulé.
+  async function dispatcherEtToaster(notif: Notification, cible: string) {
+    try {
+      const r = await envoyerNotification(notif.id_notification, "SMS");
+      if (r.statut === "echec") {
+        toast(`Échec d'envoi via ANSUT Hub : ${r.detail ?? "erreur passerelle"}.`, "error");
+      } else if (r.mode === "reel") {
+        toast(`SMS envoyé ${cible} via ANSUT Hub.`, "success");
+      } else {
+        toast(`Notification ${cible} enregistrée (ANSUT Hub — mode simulé).`, "success");
+      }
+    } catch (_e) {
+      toast(`Notification ${cible} enregistrée (passerelle injoignable — mode simulé).`, "success");
+    }
   }
 
   async function notifierRefus() {
@@ -171,14 +191,17 @@ export function Verification() {
     const dest = personne.telephone_contact || numeroSimule(personne.numero_cni);
     const msg = `PASS: Votre demande ${demande.numero_dossier} n'a pas ete retenue. Motif: ${decision.motif}. Recours possible sous 30 jours: recours@ansut.ci / +225 27 20 00 00 00.`;
     setBusy(true);
-    const { error } = await supabase.rpc("pass_notifier_sms", {
+    const { data, error } = await supabase.rpc("pass_notifier_sms", {
       p_id_demande: demande.id_demande,
       p_destinataire: dest,
       p_message: msg,
     });
+    if (error) {
+      setBusy(false);
+      return toast(error.message, "error");
+    }
+    await dispatcherEtToaster(data as Notification, "de refus");
     setBusy(false);
-    if (error) return toast(error.message, "error");
-    toast("Notification de refus envoyée (simulé).", "success");
     charger();
   }
 
@@ -565,7 +588,7 @@ export function Verification() {
               {!sansContactTel && (
                 <button onClick={envoyerSms} className="btn-accent" disabled={busy}>
                   {busy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                  Envoyer le SMS <SimuleBadge />
+                  Envoyer le SMS <span className="text-[11px] font-normal opacity-90">via ANSUT Hub</span>
                 </button>
               )}
               <Link to={`/convocation/${demande.id_demande}`} className="btn-ghost">
@@ -582,13 +605,15 @@ export function Verification() {
               {notifs.map((n) => (
                 <div key={n.id_notification} className="rounded-lg border border-slate-200 p-3">
                   <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>{n.destinataire} · {n.canal.toUpperCase()}</span>
+                    <span>{n.destinataire} · {n.canal.toUpperCase()} · via {n.gateway ?? "ANSUT Hub"}</span>
                     <span className="flex items-center gap-2">
                       {formatDateHeure(n.horodatage)}
-                      <SimuleBadge />
+                      <StatutEnvoi statut={n.statut} />
+                      {n.mode === "reel" ? <ReelBadge /> : <SimuleBadge />}
                     </span>
                   </div>
                   <p className="text-sm text-slate-700 mt-1">{n.message}</p>
+                  {n.detail && <p className="text-[11px] text-slate-400 mt-1">{n.detail}</p>}
                 </div>
               ))}
             </div>
@@ -808,5 +833,18 @@ function AuditItem({ ok, children }: { ok: boolean; children: React.ReactNode })
       {ok ? <CheckCircle2 size={15} className="text-emerald-600" /> : <XCircle size={15} className="text-red-500" />}
       <span className={ok ? "text-slate-600" : "text-red-600"}>{children}</span>
     </li>
+  );
+}
+
+function StatutEnvoi({ statut }: { statut: Notification["statut"] }) {
+  const cfg: Record<Notification["statut"], { cls: string; txt: string }> = {
+    en_attente: { cls: "bg-slate-100 text-slate-500 border-slate-300", txt: "En attente" },
+    envoye: { cls: "bg-emerald-50 text-emerald-700 border-emerald-300", txt: "Envoyé" },
+    echec: { cls: "bg-red-50 text-red-700 border-red-300", txt: "Échec" },
+  };
+  return (
+    <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold ${cfg[statut].cls}`}>
+      {cfg[statut].txt}
+    </span>
   );
 }

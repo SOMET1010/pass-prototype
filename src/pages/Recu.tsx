@@ -5,6 +5,7 @@ import { Printer, CheckCircle2, ShieldAlert } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDate } from "../lib/rules";
 import { ParcoursStepper } from "../components/ParcoursStepper";
+import { CachetPanel } from "../components/CachetPanel";
 import ansutLogo from "../assets/ansut-logo.svg";
 import type { Demande, Personne, Distribution, Terminal } from "../lib/types";
 
@@ -14,6 +15,7 @@ export function Recu() {
   const [personne, setPersonne] = useState<Personne | null>(null);
   const [distribution, setDistribution] = useState<Distribution | null>(null);
   const [terminal, setTerminal] = useState<Terminal | null>(null);
+  const [idPreuve, setIdPreuve] = useState<string | undefined>(undefined);
   const [qr, setQr] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
@@ -33,12 +35,12 @@ export function Recu() {
       setPersonne(pers as Personne);
       setDistribution((dist as Distribution) ?? null);
       if (dist) {
-        const { data: term } = await supabase
-          .from("terminal")
-          .select("*")
-          .eq("id_terminal", (dist as Distribution).id_terminal)
-          .maybeSingle();
+        const [{ data: term }, { data: preuve }] = await Promise.all([
+          supabase.from("terminal").select("*").eq("id_terminal", (dist as Distribution).id_terminal).maybeSingle(),
+          supabase.from("preuve_remise").select("id_preuve").eq("id_distribution", (dist as Distribution).id_distribution).maybeSingle(),
+        ]);
         setTerminal(term as Terminal);
+        setIdPreuve((preuve as { id_preuve: string } | null)?.id_preuve);
       }
       // QR encode uniquement le numéro de dossier (permet de retrouver le dossier, ne prouve rien).
       QRCode.toDataURL((dem as Demande).numero_dossier, { width: 220, margin: 1 }).then(setQr);
@@ -111,6 +113,17 @@ export function Recu() {
         <div className="mt-3 flex items-center gap-1.5 text-[10px] text-pass-orange">
           <ShieldAlert size={12} /> Prototype de démonstration — document sans valeur officielle.
         </div>
+      </div>
+
+      {/* Scellement de la pièce probante — Cryptologie ANSUT (hors reçu imprimé) */}
+      <div className="no-print">
+        {idPreuve ? (
+          <CachetPanel cibleType="preuve_remise" cibleId={idPreuve} titre="Cachet de la preuve de remise" />
+        ) : (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+            La preuve de remise n'est pas encore enregistrée : le cachet électronique sera disponible ensuite.
+          </div>
+        )}
       </div>
     </div>
   );

@@ -152,6 +152,9 @@ export interface SavTicket {
   resolved_at: string | null;
 }
 
+export type StatutNotification = "en_attente" | "envoye" | "echec";
+export type ModeIntegration = "simule" | "reel";
+
 export interface Notification {
   id_notification: string;
   id_demande: string;
@@ -159,7 +162,29 @@ export interface Notification {
   destinataire: string | null;
   message: string;
   est_simule: boolean;
+  statut: StatutNotification;
+  gateway: string | null;
+  mode: ModeIntegration;
+  ref_gateway: string | null;
+  detail: string | null;
   horodatage: string;
+}
+
+export type CibleCachet = "decision" | "preuve_remise";
+
+export interface CachetElectronique {
+  id_cachet: string;
+  cible_type: CibleCachet;
+  cible_id: string;
+  algorithme: string;
+  empreinte: string;
+  signature: string;
+  autorite: string;
+  reference: string | null;
+  horodatage_scelle: string;
+  mode: ModeIntegration;
+  est_simule: boolean;
+  created_at: string;
 }
 
 export interface JournalAudit {

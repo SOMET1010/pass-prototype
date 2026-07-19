@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Printer, ArrowLeft, ShieldAlert } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { CachetPanel } from "../components/CachetPanel";
 import ansutLogo from "../assets/ansut-logo.svg";
 import {
   LIBELLE_SOURCE,
@@ -191,6 +192,13 @@ export function FicheDossier() {
           officielle.
         </div>
       </div>
+
+      {/* Cachet électronique de la décision — Cryptologie ANSUT (hors pièce imprimée) */}
+      {decision && (
+        <div className="no-print">
+          <CachetPanel cibleType="decision" cibleId={decision.id_decision} titre="Cachet électronique de la décision" />
+        </div>
+      )}
     </div>
   );
 }
