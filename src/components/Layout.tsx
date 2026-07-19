@@ -56,7 +56,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <div className="h-8 w-px bg-slate-200" />
             <div className="leading-tight">
               <div className="font-bold text-pass-blue-dark text-base">PASS</div>
-              <div className="text-[11px] text-slate-500 -mt-0.5">Smartphones Subventionnés</div>
+              <div className="text-[11px] text-slate-500 -mt-0.5">Programme d'Accès aux Smartphones Subventionnés</div>
             </div>
           </div>
           {agent && (
