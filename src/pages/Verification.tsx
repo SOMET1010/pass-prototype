@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2, MapPin, MessageSquare, Send, Wrench, Timer, Archive } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, HelpCircle, ArrowRight, FileText, FileDown, Zap, Loader2, MapPin, MessageSquare, Send, Wrench, Timer, Archive, RadioTower } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
@@ -295,6 +295,64 @@ export function Verification() {
             })}
           </div>
         )}
+
+        {/* Consultation de la base des opérateurs mobiles */}
+        {(() => {
+          const vOp = verifs.find((v) => v.source === "operateur");
+          if (!vOp) return null;
+          const d = (vOp.donnees_retour ?? {}) as Record<string, unknown>;
+          const present = d.present === true || (d.present === undefined && vOp.resultat !== "indisponible");
+          const concordant = vOp.resultat === "concluant";
+          const ops = (Array.isArray(d.operateurs_consultes) ? (d.operateurs_consultes as string[]) : ["MTN CI", "Orange CI", "Moov Africa"]);
+          return (
+            <div className="mt-4 rounded-lg border border-pass-blue/30 bg-pass-blue-light/40 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-pass-blue-dark">
+                  <RadioTower size={16} /> Consultation de la base des opérateurs mobiles
+                </div>
+                <SimuleBadge />
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-slate-500">Opérateurs interrogés :</span>
+                {ops.map((o) => (
+                  <span key={o} className="rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs text-slate-600">
+                    {o}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                {present ? (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${concordant ? "bg-emerald-600 text-white" : "bg-pass-orange text-white"}`}>
+                    <CheckCircle2 size={13} /> Présent dans la base
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-bold text-slate-600">
+                    <XCircle size={13} /> Absent de la base
+                  </span>
+                )}
+                <span className="text-sm text-slate-700">
+                  {present
+                    ? concordant
+                      ? "Titulaire déjà enregistré — ligne à son nom"
+                      : "Ligne trouvée, mais titulaire non concordant"
+                    : "Aucune ligne à ce nom chez les opérateurs"}
+                </span>
+              </div>
+              {Boolean(d.nom_operateur || d.detail_ligne) && (
+                <p className="mt-1 text-xs text-slate-500">
+                  {d.nom_operateur ? `Opérateur : ${String(d.nom_operateur)}. ` : ""}
+                  {(d.detail_ligne as string) || ""}
+                </p>
+              )}
+              {!present && (
+                <p className="mt-2 text-xs text-pass-orange">
+                  Le demandeur n'est dans aucune base opérateur : une <strong>première ligne mobile sera créée au moment
+                  de la remise</strong> (parcours documentaire). Dossier orienté « à instruire ».
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Recommandation */}
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 border border-slate-200 p-4">
