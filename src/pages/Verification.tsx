@@ -6,6 +6,7 @@ import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
 import { ParcoursStepper } from "../components/ParcoursStepper";
 import { pointRecommande } from "../lib/zones";
+import { marqueOperateur } from "../lib/operateurs";
 import { envoyerNotification } from "../lib/ansut";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -338,9 +339,7 @@ export function Verification() {
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-slate-500">Opérateurs interrogés :</span>
                 {ops.map((o) => (
-                  <span key={o} className="rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs text-slate-600">
-                    {o}
-                  </span>
+                  <OperateurChip key={o} nom={o} actif={String(d.nom_operateur ?? "") === o} />
                 ))}
               </div>
               <div className="mt-3 flex items-center gap-2">
@@ -362,9 +361,14 @@ export function Verification() {
                 </span>
               </div>
               {Boolean(d.nom_operateur || d.detail_ligne) && (
-                <p className="mt-1 text-xs text-slate-500">
-                  {d.nom_operateur ? `Opérateur : ${String(d.nom_operateur)}. ` : ""}
-                  {(d.detail_ligne as string) || ""}
+                <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                  {d.nom_operateur ? (
+                    <>
+                      <span>Opérateur du demandeur :</span>
+                      <OperateurChip nom={String(d.nom_operateur)} actif />
+                    </>
+                  ) : null}
+                  {(d.detail_ligne as string) ? <span>{d.detail_ligne as string}</span> : null}
                 </p>
               )}
               {!present && (
@@ -833,6 +837,26 @@ function AuditItem({ ok, children }: { ok: boolean; children: React.ReactNode })
       {ok ? <CheckCircle2 size={15} className="text-emerald-600" /> : <XCircle size={15} className="text-red-500" />}
       <span className={ok ? "text-slate-600" : "text-red-600"}>{children}</span>
     </li>
+  );
+}
+
+function OperateurChip({ nom, actif }: { nom: string; actif?: boolean }) {
+  const m = marqueOperateur(nom);
+  const style: React.CSSProperties & Record<string, string> = {
+    backgroundColor: "#fff",
+    borderColor: m.couleur,
+    color: m.texte === "#FFFFFF" ? m.couleur : m.texte,
+    "--tw-ring-color": m.couleur,
+  };
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${actif ? "ring-2 ring-offset-1" : ""}`}
+      style={style}
+      title={actif ? `${m.nom} — opérateur du demandeur` : m.nom}
+    >
+      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: m.couleur }} />
+      {m.nom}
+    </span>
   );
 }
 
