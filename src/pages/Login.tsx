@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Smartphone, ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import ansutLogo from "../assets/ansut-logo.svg";
 
 const COMPTES_DEMO = [
   { role: "Enrôlement", email: "enrolement@pass.demo" },
@@ -41,12 +42,10 @@ export function Login() {
       <div className="flex-1 grid place-items-center px-4 py-10">
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-6">
-            <div className="grid h-14 w-14 place-items-center rounded-xl bg-pass-blue text-white mb-3">
-              <Smartphone size={28} />
-            </div>
+            <img src={ansutLogo} alt="ANSUT" className="h-16 w-auto mb-4" />
             <h1 className="text-2xl font-bold text-pass-blue-dark">Plateforme PASS</h1>
             <p className="text-sm text-slate-500 text-center">
-              Programme d'Accès aux Smartphones Subventionnés · ANSUT
+              Programme d'Accès aux Smartphones Subventionnés
             </p>
           </div>
 

@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { Printer, ArrowLeft, MapPin, CalendarClock, ShieldAlert } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { pointRecommande } from "../lib/zones";
+import ansutLogo from "../assets/ansut-logo.svg";
 import type { Demande, Personne, StockPoint } from "../lib/types";
 
 export function Convocation() {
@@ -49,9 +50,12 @@ export function Convocation() {
 
       <div className="card print-area p-8">
         <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-          <div>
-            <div className="font-bold text-pass-blue-dark text-lg">Convocation de retrait</div>
-            <div className="text-[11px] text-slate-500">Programme d'Accès aux Smartphones Subventionnés · ANSUT</div>
+          <div className="flex items-center gap-3">
+            <img src={ansutLogo} alt="ANSUT" className="h-9 w-auto" />
+            <div className="border-l border-slate-200 pl-3">
+              <div className="font-bold text-pass-blue-dark text-lg">Convocation de retrait</div>
+              <div className="text-[11px] text-slate-500">Programme d'Accès aux Smartphones Subventionnés</div>
+            </div>
           </div>
           <div className="text-right text-xs text-slate-500">
             Dossier

@@ -11,10 +11,10 @@ import {
   Info,
   LogOut,
   ShieldAlert,
-  Smartphone,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { LIBELLE_ROLE } from "../lib/rules";
+import ansutLogo from "../assets/ansut-logo.svg";
 
 const NAV = [
   { to: "/", label: "Accueil", icon: LayoutDashboard, end: true },
@@ -52,12 +52,11 @@ export function Layout({ children }: { children: ReactNode }) {
       <header className="no-print bg-white border-b border-slate-200">
         <div className="mx-auto max-w-6xl px-4 flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-pass-blue text-white">
-              <Smartphone size={22} />
-            </div>
+            <img src={ansutLogo} alt="ANSUT" className="h-9 w-auto" />
+            <div className="h-8 w-px bg-slate-200" />
             <div className="leading-tight">
-              <div className="font-bold text-pass-blue-dark text-lg">PASS</div>
-              <div className="text-[11px] text-slate-500 -mt-0.5">Accès aux Smartphones Subventionnés · ANSUT</div>
+              <div className="font-bold text-pass-blue-dark text-base">PASS</div>
+              <div className="text-[11px] text-slate-500 -mt-0.5">Smartphones Subventionnés</div>
             </div>
           </div>
           {agent && (

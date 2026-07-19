@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Printer, ArrowLeft, ShieldAlert } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import ansutLogo from "../assets/ansut-logo.svg";
 import {
   LIBELLE_SOURCE,
   LIBELLE_RESULTAT,
@@ -77,9 +78,12 @@ export function FicheDossier() {
       <div className="card print-area p-8 space-y-6">
         {/* En-tête */}
         <div className="flex items-start justify-between border-b border-slate-200 pb-4">
-          <div>
-            <div className="text-lg font-bold text-pass-blue-dark">Dossier PASS — Pièce probante</div>
-            <div className="text-xs text-slate-500">Programme d'Accès aux Smartphones Subventionnés · ANSUT</div>
+          <div className="flex items-center gap-3">
+            <img src={ansutLogo} alt="ANSUT" className="h-9 w-auto" />
+            <div className="border-l border-slate-200 pl-3">
+              <div className="text-lg font-bold text-pass-blue-dark">Dossier PASS — Pièce probante</div>
+              <div className="text-xs text-slate-500">Programme d'Accès aux Smartphones Subventionnés</div>
+            </div>
           </div>
           <div className="text-right">
             <div className="font-mono text-sm font-semibold">{demande.numero_dossier}</div>

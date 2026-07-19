@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import QRCode from "qrcode";
-import { Printer, Smartphone, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Printer, CheckCircle2, ShieldAlert } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatDate } from "../lib/rules";
 import { ParcoursStepper } from "../components/ParcoursStepper";
+import ansutLogo from "../assets/ansut-logo.svg";
 import type { Demande, Personne, Distribution, Terminal } from "../lib/types";
 
 export function Recu() {
@@ -74,12 +75,10 @@ export function Recu() {
       <div className="card print-area p-8">
         <div className="flex items-center justify-between border-b border-slate-200 pb-4">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-lg bg-pass-blue text-white">
-              <Smartphone size={22} />
-            </div>
-            <div>
+            <img src={ansutLogo} alt="ANSUT" className="h-10 w-auto" />
+            <div className="border-l border-slate-200 pl-3">
               <div className="font-bold text-pass-blue-dark text-lg leading-tight">Reçu PASS</div>
-              <div className="text-[11px] text-slate-500">Programme d'Accès aux Smartphones Subventionnés · ANSUT</div>
+              <div className="text-[11px] text-slate-500">Programme d'Accès aux Smartphones Subventionnés</div>
             </div>
           </div>
           <div className="text-emerald-600 flex items-center gap-1 text-sm font-semibold">
