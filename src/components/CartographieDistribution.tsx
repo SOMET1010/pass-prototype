@@ -1,6 +1,7 @@
-import { useRef } from "react";
-import { Download } from "lucide-react";
+import { useRef, useState } from "react";
+import { Download, Map as MapIcon, Layers } from "lucide-react";
 import { CI_VIEWBOX, CI_PATH, coordZone } from "../lib/zones";
+import { CarteOSM } from "./CarteOSM";
 
 interface ZoneData {
   zone: string;
@@ -8,9 +9,10 @@ interface ZoneData {
   stock: number; // stock disponible
 }
 
-/** Carte stylisée de la distribution des terminaux par zone (bulles proportionnelles). */
+/** Cartographie de la distribution : carte OpenStreetMap (par défaut) ou carte simple exportable. */
 export function CartographieDistribution({ data }: { data: ZoneData[] }) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const [mode, setMode] = useState<"osm" | "simple">("osm");
   const max = Math.max(1, ...data.map((d) => d.distribues));
   const total = data.reduce((s, d) => s + d.distribues, 0);
 
@@ -40,34 +42,56 @@ export function CartographieDistribution({ data }: { data: ZoneData[] }) {
 
   return (
     <div>
-      <div className="flex justify-end no-print -mt-1 mb-2">
-        <button onClick={exporterPng} className="btn-ghost !py-1.5 !px-3 text-xs">
-          <Download size={14} /> Exporter (PNG)
-        </button>
+      {/* Sélecteur de carte + export */}
+      <div className="flex items-center justify-between gap-2 no-print -mt-1 mb-3">
+        <div className="inline-flex rounded-md border border-slate-300 overflow-hidden text-xs">
+          <button
+            onClick={() => setMode("osm")}
+            className={`flex items-center gap-1 px-3 py-1.5 ${mode === "osm" ? "bg-pass-blue text-white" : "bg-white text-slate-600"}`}
+          >
+            <MapIcon size={14} /> Carte OSM
+          </button>
+          <button
+            onClick={() => setMode("simple")}
+            className={`flex items-center gap-1 px-3 py-1.5 ${mode === "simple" ? "bg-pass-blue text-white" : "bg-white text-slate-600"}`}
+          >
+            <Layers size={14} /> Carte simple
+          </button>
+        </div>
+        {mode === "simple" && (
+          <button onClick={exporterPng} className="btn-ghost !py-1.5 !px-3 text-xs">
+            <Download size={14} /> Exporter (PNG)
+          </button>
+        )}
       </div>
+
       <div className="grid gap-4 md:grid-cols-[1fr_auto] items-center">
         <div>
-          <svg ref={svgRef} viewBox={`0 0 ${CI_VIEWBOX.w} ${CI_VIEWBOX.h}`} className="w-full max-w-md mx-auto" xmlns="http://www.w3.org/2000/svg">
-            <rect x="0" y="0" width={CI_VIEWBOX.w} height={CI_VIEWBOX.h} fill="#ffffff" />
-            <path d={CI_PATH} fill="#E8F0FA" stroke="#1D56A3" strokeWidth={1.5} strokeOpacity={0.5} />
-            {data.map((d) => {
-              const c = coordZone(d.zone);
-              if (!c) return null;
-              const r = 8 + (d.distribues / max) * 22;
-              return (
-                <g key={d.zone}>
-                  <circle cx={c.x} cy={c.y} r={r} fill="#F08221" fillOpacity={0.28} />
-                  <circle cx={c.x} cy={c.y} r={Math.max(5, r * 0.5)} fill="#F08221" fillOpacity={0.85} />
-                  <text x={c.x} y={c.y + 4} textAnchor="middle" fill="#ffffff" fontSize={12} fontWeight={700} fontFamily="sans-serif">
-                    {d.distribues}
-                  </text>
-                  <text x={c.x} y={c.y - r - 5} textAnchor="middle" fill="#475569" fontSize={12} fontWeight={600} fontFamily="sans-serif">
-                    {d.zone}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
+          {mode === "osm" ? (
+            <CarteOSM data={data} />
+          ) : (
+            <svg ref={svgRef} viewBox={`0 0 ${CI_VIEWBOX.w} ${CI_VIEWBOX.h}`} className="w-full max-w-md mx-auto" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0" y="0" width={CI_VIEWBOX.w} height={CI_VIEWBOX.h} fill="#ffffff" />
+              <path d={CI_PATH} fill="#E8F0FA" stroke="#1D56A3" strokeWidth={1.5} strokeOpacity={0.5} />
+              {data.map((d) => {
+                const c = coordZone(d.zone);
+                if (!c) return null;
+                const r = 8 + (d.distribues / max) * 22;
+                return (
+                  <g key={d.zone}>
+                    <circle cx={c.x} cy={c.y} r={r} fill="#F08221" fillOpacity={0.28} />
+                    <circle cx={c.x} cy={c.y} r={Math.max(5, r * 0.5)} fill="#F08221" fillOpacity={0.85} />
+                    <text x={c.x} y={c.y + 4} textAnchor="middle" fill="#ffffff" fontSize={12} fontWeight={700} fontFamily="sans-serif">
+                      {d.distribues}
+                    </text>
+                    <text x={c.x} y={c.y - r - 5} textAnchor="middle" fill="#475569" fontSize={12} fontWeight={600} fontFamily="sans-serif">
+                      {d.zone}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          )}
         </div>
 
         <div className="min-w-52">

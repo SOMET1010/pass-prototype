@@ -19,6 +19,16 @@ export function coordZone(zone: string): { x: number; y: number } | null {
   return ZONES_COORD[zone] ?? null;
 }
 
+// Coordonnées géographiques réelles (lat, lon) pour la carte OpenStreetMap.
+export const ZONES_LATLON: Record<string, [number, number]> = {
+  Abidjan: [5.348, -4.027],
+  Bouaké: [7.694, -5.03],
+  Korhogo: [9.458, -5.629],
+  Man: [7.412, -7.554],
+  Odienné: [9.505, -7.564],
+};
+export const CI_CENTER: [number, number] = [7.54, -5.55];
+
 import type { StockPoint } from "./types";
 
 /**
