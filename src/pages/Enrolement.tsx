@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserPlus, IdCard, Camera, ShieldCheck, ArrowRight, Loader2, Eraser, ScanLine } from "lucide-react";
+import { UserPlus, IdCard, Camera, ShieldCheck, ArrowRight, Loader2, Eraser, ScanLine, Timer } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { fichierVersDataUrl } from "../lib/image";
 import { toast } from "../components/Toaster";
@@ -47,6 +47,22 @@ export function Enrolement() {
   const [contactTel, setContactTel] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Chronomètre d'enrôlement (objectif < 1 min avec toutes les pièces)
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [tick, setTick] = useState(0);
+  const [doneAt, setDoneAt] = useState<number | null>(null);
+  function startChrono() {
+    setStartedAt((s) => s ?? Date.now());
+  }
+  useEffect(() => {
+    if (!startedAt || doneAt) return;
+    const t = setInterval(() => setTick((n) => n + 1), 500);
+    return () => clearInterval(t);
+  }, [startedAt, doneAt]);
+  const elapsed = startedAt ? Math.round(((doneAt ?? Date.now()) - startedAt) / 1000) : 0;
+  const chronoStr = `${String(Math.floor(elapsed / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
+  void tick;
+
   useEffect(() => {
     supabase
       .from("campagne")
@@ -60,8 +76,10 @@ export function Enrolement() {
 
   const champsComplets = cni.trim() && nom.trim() && prenoms.trim() && dn && zone.trim();
 
-  // Simule la lecture automatique (OCR) d'une pièce d'identité de démonstration.
+  // Simule la lecture automatique (OCR) d'une pièce de démonstration.
+  // Avec toutes les pièces disponibles, un seul scan renseigne CNI + NNI + CMU.
   function scannerPiece(p: (typeof PERSONAS)[number]) {
+    startChrono();
     setCni(p.cni);
     setNni(p.nni);
     setNom(p.nom);
@@ -70,9 +88,15 @@ export function Enrolement() {
     setZone(p.zone);
     setPieceScan(true);
     setCmuDispo(p.cmu);
-    setCmu("");
-    setCmuScan(false);
-    toast("Pièce lue : informations extraites automatiquement (simulé).", "success");
+    if (p.cmu) {
+      setCmu(p.cmu);
+      setCmuScan(true);
+      toast("Pièces lues : identité, NNI et carte CMU extraits (simulé).", "success");
+    } else {
+      setCmu("");
+      setCmuScan(false);
+      toast("Pièce lue : identité et NNI extraits (simulé).", "success");
+    }
   }
 
   // Simule la lecture de la carte CMU (éligibilité sociale).
@@ -99,6 +123,7 @@ export function Enrolement() {
   }
 
   async function verifierIdentite() {
+    startChrono();
     if (!campagne) return toast("Aucune campagne ouverte.", "error");
     if (!champsComplets) return toast("Tous les champs obligatoires doivent être renseignés (RM-064).", "error");
     setBusy(true);
@@ -181,7 +206,9 @@ export function Enrolement() {
       const { error } = await supabase.rpc("pass_soumettre_demande", { p_id_demande: demande.id_demande });
       setBusy(false);
       if (error) return toast(error.message, "error");
-      toast("Dossier soumis. Passage à la vérification.", "success");
+      const secs = startedAt ? Math.round((Date.now() - startedAt) / 1000) : null;
+      setDoneAt(Date.now());
+      toast(secs !== null ? `Dossier soumis en ${secs} s. Passage à la vérification.` : "Dossier soumis.", "success");
       return navigate(`/verification/${demande.id_demande}`);
     }
     setBusy(false);
@@ -192,19 +219,38 @@ export function Enrolement() {
     <div className="space-y-6">
       <ParcoursStepper active={demande ? 1 : 0} />
 
-      <div className="flex items-center gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-lg bg-pass-blue-light text-pass-blue">
-          <UserPlus size={20} />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-pass-blue-light text-pass-blue">
+            <UserPlus size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">Enrôlement assisté</h1>
+            <p className="text-sm text-slate-500">
+              {campagne ? (
+                <>Campagne : <strong>{campagne.libelle}</strong></>
+              ) : (
+                "Chargement de la campagne…"
+              )}
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold">Enrôlement assisté</h1>
-          <p className="text-sm text-slate-500">
-            {campagne ? (
-              <>Campagne : <strong>{campagne.libelle}</strong></>
-            ) : (
-              "Chargement de la campagne…"
-            )}
-          </p>
+        <div className="text-right">
+          <div
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold border ${
+              !startedAt
+                ? "bg-slate-50 text-slate-400 border-slate-200"
+                : elapsed <= 60
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                  : elapsed <= 90
+                    ? "bg-amber-50 text-amber-700 border-amber-300"
+                    : "bg-red-50 text-red-700 border-red-300"
+            }`}
+          >
+            <Timer size={15} />
+            {doneAt ? `Enrôlé en ${chronoStr}` : chronoStr}
+          </div>
+          <div className="text-[11px] text-slate-400 mt-0.5">Objectif &lt; 1 min</div>
         </div>
       </div>
 
@@ -264,7 +310,7 @@ export function Enrolement() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="field-label">Numéro de pièce d'identité (CNI) *</label>
-              <input className="field-input font-mono" value={cni} onChange={(e) => setCni(e.target.value)} disabled={!!demande} placeholder="CI-000-000000" />
+              <input className="field-input font-mono" value={cni} onChange={(e) => { startChrono(); setCni(e.target.value); }} disabled={!!demande} placeholder="CI-000-000000" />
             </div>
             <div>
               <label className="field-label">NNI (N° National d'Identification)</label>
