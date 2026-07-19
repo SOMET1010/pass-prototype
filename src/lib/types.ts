@@ -30,6 +30,8 @@ export interface Personne {
   zone_residence: string;
   photo_url: string | null;
   statut_verif_identite: StatutVerifIdentite;
+  telephone_contact: string | null;
+  contact_relation: string | null;
   profil_demo: Record<string, unknown>;
   created_at: string;
 }

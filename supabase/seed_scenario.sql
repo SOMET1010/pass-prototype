@@ -140,3 +140,13 @@ with tk as (
 )
 update terminal set statut='bloque'
 where id_terminal in (select id_terminal from distribution where id_distribution in (select id_distribution from tk));
+
+-- ===== Contacts de notification (le bénéficiaire n'a souvent pas de téléphone) =====
+update personne
+   set contact_relation = 'menage',
+       telephone_contact = '+225 07 ' ||
+         regexp_replace(lpad(substr(regexp_replace(numero_cni,'\D','','g'),1,8),8,'0'),
+                        '(..)(..)(..)(..)', '\1 \2 \3 \4')
+ where numero_cni like 'CI-900-%';
+update personne set contact_relation = 'aucun', telephone_contact = null
+ where numero_cni in ('CI-900-008','CI-900-024');

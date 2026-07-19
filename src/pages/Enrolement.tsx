@@ -32,6 +32,8 @@ export function Enrolement() {
   const [identite, setIdentite] = useState<ResultatVerif | null>(null);
   const [moyen, setMoyen] = useState<MoyenConsentement>("signature");
   const [consent, setConsent] = useState(false);
+  const [contactRelation, setContactRelation] = useState("menage");
+  const [contactTel, setContactTel] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -103,6 +105,12 @@ export function Enrolement() {
   async function enregistrer(soumettre: boolean) {
     if (!demande) return;
     setBusy(true);
+    // Contact de notification (le bénéficiaire n'a souvent pas de téléphone personnel)
+    await supabase.rpc("pass_maj_contact", {
+      p_id_personne: demande.id_personne,
+      p_telephone: contactRelation === "aucun" ? null : contactTel,
+      p_relation: contactRelation,
+    });
     if (consent) {
       const { error } = await supabase.rpc("pass_enregistrer_consentement", {
         p_id_demande: demande.id_demande,
@@ -272,6 +280,35 @@ export function Enrolement() {
               cadre du programme PASS. <span className="text-red-600">*</span> (RM-184)
             </span>
           </label>
+
+          <div className="border-t border-slate-100 pt-4">
+            <label className="field-label">Contact pour la notification de retrait</label>
+            <p className="text-xs text-slate-400 mb-2">
+              Le bénéficiaire ne possède pas forcément de smartphone. Indiquez un canal joignable ; à défaut, une
+              convocation papier lui sera remise.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <select
+                className="field-input"
+                value={contactRelation}
+                onChange={(e) => setContactRelation(e.target.value)}
+              >
+                <option value="menage">Téléphone du ménage</option>
+                <option value="proche">Un proche</option>
+                <option value="soi_meme">Bénéficiaire (déjà équipé)</option>
+                <option value="relais">Relais communautaire</option>
+                <option value="aucun">Aucun contact — convocation papier</option>
+              </select>
+              {contactRelation !== "aucun" && (
+                <input
+                  className="field-input"
+                  placeholder="+225 07 00 00 00 00"
+                  value={contactTel}
+                  onChange={(e) => setContactTel(e.target.value)}
+                />
+              )}
+            </div>
+          </div>
 
           <div className="flex flex-wrap gap-3 pt-1">
             <button onClick={() => enregistrer(false)} className="btn-ghost" disabled={busy}>

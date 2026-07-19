@@ -14,6 +14,7 @@ import {
   LIBELLE_STATUT_TERMINAL,
   LIBELLE_SAV_TYPE,
   LIBELLE_SAV_STATUT,
+  LIBELLE_CONTACT_RELATION,
   formatDate,
   formatDateHeure,
 } from "../lib/rules";
@@ -141,7 +142,7 @@ export function Verification() {
     if (!demande || !personne) return;
     const pr = pointRecommande(pointsStock, personne.zone_residence);
     if (!pr) return toast("Aucun point de retrait avec stock à communiquer.", "error");
-    const dest = numeroSimule(personne.numero_cni);
+    const dest = personne.telephone_contact || numeroSimule(personne.numero_cni);
     const msg = `PASS: Votre demande ${demande.numero_dossier} est validee. Retirez votre smartphone subventionne au ${pr.libelle} (${pr.zone}). Munissez-vous de votre piece d'identite.`;
     setBusy(true);
     const { error } = await supabase.rpc("pass_notifier_sms", {
@@ -182,6 +183,9 @@ export function Verification() {
   const etapeActive = distribution ? 4 : decision ? 3 : demande.recommandation ? 2 : 1;
   const pointRetrait = pointRecommande(pointsStock, personne.zone_residence);
   const memeZone = pointRetrait?.zone === personne.zone_residence;
+  const sansContactTel = personne.contact_relation === "aucun" || !personne.telephone_contact;
+  const destinataireContact = personne.telephone_contact || numeroSimule(personne.numero_cni);
+  const relationLabel = personne.contact_relation ? LIBELLE_CONTACT_RELATION[personne.contact_relation] : "Non renseigné";
 
   return (
     <div className="space-y-6">
@@ -408,29 +412,45 @@ export function Verification() {
         </div>
       )}
 
-      {/* Notification SMS (simulée) */}
+      {/* Notification du bénéficiaire (le bénéficiaire n'a souvent pas de téléphone) */}
       {demande.etat === "validee" && (
         <div className="card p-5 space-y-4">
           <div className="flex items-center gap-2">
             <MessageSquare size={18} className="text-pass-blue" />
             <h2 className="text-base font-semibold">Notification du bénéficiaire — lieu de retrait</h2>
-            <SimuleBadge />
           </div>
+
+          {/* Canal de notification */}
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
+            <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-1">Canal de notification</div>
+            <div className="text-slate-700">
+              {sansContactTel ? (
+                <>Aucun téléphone joignable — <strong>convocation papier</strong> remise sur place.</>
+              ) : (
+                <>
+                  SMS vers <strong className="font-mono">{destinataireContact}</strong> —{" "}
+                  <span className="text-slate-500">{relationLabel}</span>
+                </>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-slate-400">
+              Le bénéficiaire est ciblé car il ne possède pas de smartphone : la notification passe par un contact
+              (proche, ménage, relais) et/ou une convocation papier.
+            </p>
+          </div>
+
           {pointRetrait ? (
-            <>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs text-slate-400 mb-1">
-                  Aperçu du SMS · destinataire {numeroSimule(personne.numero_cni)}
-                </div>
-                <p className="text-sm text-slate-700">
-                  PASS : Votre demande {demande.numero_dossier} est validée. Retirez votre smartphone subventionné au{" "}
-                  <strong>{pointRetrait.libelle}</strong> ({pointRetrait.zone}). Munissez-vous de votre pièce d'identité.
-                </p>
-              </div>
-              <button onClick={envoyerSms} className="btn-accent" disabled={busy}>
-                {busy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Envoyer le SMS (simulé)
-              </button>
-            </>
+            <div className="flex flex-wrap items-center gap-2">
+              {!sansContactTel && (
+                <button onClick={envoyerSms} className="btn-accent" disabled={busy}>
+                  {busy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                  Envoyer le SMS <SimuleBadge />
+                </button>
+              )}
+              <Link to={`/convocation/${demande.id_demande}`} className="btn-ghost">
+                <FileText size={16} /> Convocation de retrait (papier)
+              </Link>
+            </div>
           ) : (
             <p className="text-sm text-slate-500">Aucun point de retrait avec stock à communiquer pour le moment.</p>
           )}

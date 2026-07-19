@@ -84,6 +84,14 @@ export const LIBELLE_SAV_TYPE: Record<string, string> = {
   autre: "Autre",
 };
 
+export const LIBELLE_CONTACT_RELATION: Record<string, string> = {
+  soi_meme: "Bénéficiaire (déjà équipé)",
+  proche: "Un proche",
+  menage: "Téléphone du ménage",
+  relais: "Relais communautaire",
+  aucun: "Aucun contact — convocation papier",
+};
+
 export const LIBELLE_SAV_STATUT: Record<string, string> = {
   ouvert: "Ouvert",
   en_cours: "En cours",
