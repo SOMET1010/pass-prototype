@@ -113,6 +113,11 @@ export interface PointRetrait {
   adresse: string | null;
   telephone: string | null;
   gestionnaire: string | null;
+  type_point?: "fixe" | "mobile";
+  statut_point?: "actif" | "inactif" | "en_mission";
+  latitude?: number | null;
+  longitude?: number | null;
+  id_campagne?: string | null;
 }
 
 export interface StockPoint {
@@ -185,6 +190,122 @@ export interface CachetElectronique {
   mode: ModeIntegration;
   est_simule: boolean;
   created_at: string;
+}
+
+// ===================== MODULE LOGISTIQUE =====================
+export type TypePoint = "fixe" | "mobile";
+export type StatutPoint = "actif" | "inactif" | "en_mission";
+export type StatutArrivage = "attendu" | "en_reception" | "receptionne" | "cloture";
+export type StatutColis = "attendu" | "recu" | "ecart" | "range";
+export type StatutMission = "preparee" | "en_cours" | "cloturee";
+export type TypeMouvement = "reception" | "rangement" | "transfert" | "remise" | "retour" | "ajustement";
+
+export interface Fournisseur {
+  id_fournisseur: string;
+  raison_sociale: string;
+  pays: string;
+  contact_email: string | null;
+  contact_tel: string | null;
+  actif: boolean;
+  created_at: string;
+}
+
+export interface Entrepot {
+  id_entrepot: string;
+  libelle: string;
+  zone: string;
+  adresse: string | null;
+}
+
+export interface Emplacement {
+  id_emplacement: string;
+  id_entrepot: string;
+  code: string;
+  description: string | null;
+}
+
+export interface Arrivage {
+  id_arrivage: string;
+  reference: string;
+  id_fournisseur: string;
+  date_prevue: string | null;
+  date_reception: string | null;
+  statut: StatutArrivage;
+  note: string | null;
+  created_at: string;
+}
+
+export interface Colis {
+  id_colis: string;
+  id_arrivage: string;
+  id_ligne: string | null;
+  code_barre: string;
+  modele: string;
+  quantite_attendue: number;
+  quantite_recue: number | null;
+  imei_debut: string | null;
+  imei_fin: string | null;
+  statut: StatutColis;
+  id_emplacement: string | null;
+  ecart: number;
+  horodatage_recu: string | null;
+}
+
+export interface Equipe {
+  id_equipe: string;
+  libelle: string;
+  id_point_retrait: string | null;
+  vehicule: string | null;
+  zone: string | null;
+  created_at: string;
+}
+
+export interface Mission {
+  id_mission: string;
+  reference: string;
+  id_point_retrait: string;
+  id_campagne: string | null;
+  date_debut: string | null;
+  date_fin: string | null;
+  statut: StatutMission;
+  latitude: number | null;
+  longitude: number | null;
+  created_at: string;
+}
+
+export interface RapportMission {
+  id_rapport: string;
+  id_mission: string;
+  distribues: number;
+  retours: number;
+  stock_restant: number;
+  incidents: string | null;
+  observations: string | null;
+  id_agent: string;
+  latitude: number | null;
+  longitude: number | null;
+  horodatage: string;
+}
+
+export interface MouvementStock {
+  id_mouvement: string;
+  type_mvt: TypeMouvement;
+  id_terminal: string | null;
+  id_colis: string | null;
+  quantite: number;
+  origine: string | null;
+  destination: string | null;
+  reference: string | null;
+  id_agent: string | null;
+  horodatage: string;
+}
+
+export interface StockLogistique {
+  lieu: string;
+  niveau: "point" | "entrepot";
+  modele: string;
+  en_stock: number;
+  remis: number;
 }
 
 export interface JournalAudit {

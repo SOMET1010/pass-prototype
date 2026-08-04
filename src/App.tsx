@@ -8,6 +8,7 @@ import { Dossiers } from "./pages/Dossiers";
 import { Instruction } from "./pages/Instruction";
 import { Recherche } from "./pages/Recherche";
 import { Stock } from "./pages/Stock";
+import { Logistique } from "./pages/Logistique";
 import { Sav } from "./pages/Sav";
 import { Verification } from "./pages/Verification";
 import { FicheDossier } from "./pages/FicheDossier";
@@ -42,6 +43,7 @@ export default function App() {
       <Route path="/instruction" element={<Protected><Instruction /></Protected>} />
       <Route path="/recherche" element={<Protected><Recherche /></Protected>} />
       <Route path="/stock" element={<Protected><Stock /></Protected>} />
+      <Route path="/logistique" element={<Protected><Logistique /></Protected>} />
       <Route path="/sav" element={<Protected><Sav /></Protected>} />
       <Route path="/verification/:id" element={<Protected><Verification /></Protected>} />
       <Route path="/fiche/:id" element={<Protected><FicheDossier /></Protected>} />
