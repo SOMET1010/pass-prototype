@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Truck, PackageCheck, Warehouse, MapPin, ClipboardList, Boxes, ScanLine,
-  Plus, Loader2, ArrowRightLeft, Users, Play, CheckCircle2, Building2, X,
+  Plus, Loader2, ArrowRightLeft, Users, Play, CheckCircle2, Building2, X, ShoppingCart, Send,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { toast } from "../components/Toaster";
@@ -10,14 +10,15 @@ import { useAuth } from "../context/AuthContext";
 import { formatDateHeure } from "../lib/rules";
 import * as L from "../lib/logistique";
 import type {
-  Agent, Arrivage, Colis, Emplacement, Entrepot, Fournisseur, Mission,
+  Agent, Arrivage, Colis, Commande, CommandeLigne, Emplacement, Entrepot, Fournisseur, Mission,
   MouvementStock, PointRetrait, StockLogistique,
 } from "../lib/types";
 
-type Onglet = "bord" | "arrivages" | "reception" | "points" | "missions";
+type Onglet = "bord" | "commandes" | "arrivages" | "reception" | "points" | "missions";
 
 const ONGLETS: { id: Onglet; label: string; icon: typeof Truck }[] = [
   { id: "bord", label: "Tableau de bord", icon: Boxes },
+  { id: "commandes", label: "Commandes fournisseurs", icon: ShoppingCart },
   { id: "arrivages", label: "Arrivages & colisage", icon: ClipboardList },
   { id: "reception", label: "Réception & entrepôt", icon: PackageCheck },
   { id: "points", label: "Points mobiles & équipes", icon: MapPin },
@@ -30,6 +31,8 @@ export function Logistique() {
   const [onglet, setOnglet] = useState<Onglet>("bord");
 
   const [fournisseurs, setFournisseurs] = useState<Fournisseur[]>([]);
+  const [commandes, setCommandes] = useState<Commande[]>([]);
+  const [commandeLignes, setCommandeLignes] = useState<CommandeLigne[]>([]);
   const [arrivages, setArrivages] = useState<Arrivage[]>([]);
   const [colis, setColis] = useState<Colis[]>([]);
   const [entrepots, setEntrepots] = useState<Entrepot[]>([]);
@@ -42,8 +45,10 @@ export function Logistique() {
   const [loading, setLoading] = useState(true);
 
   const charger = useCallback(async () => {
-    const [f, a, c, e, em, p, ag, mi, mv, st] = await Promise.all([
+    const [f, cmd, cl, a, c, e, em, p, ag, mi, mv, st] = await Promise.all([
       supabase.from("fournisseur").select("*").order("raison_sociale"),
+      supabase.from("commande").select("*").order("created_at", { ascending: false }),
+      supabase.from("commande_ligne").select("*"),
       supabase.from("arrivage").select("*").order("created_at", { ascending: false }),
       supabase.from("colis").select("*").order("code_barre"),
       supabase.from("entrepot").select("*").order("libelle"),
@@ -55,6 +60,8 @@ export function Logistique() {
       supabase.from("v_stock_logistique").select("*"),
     ]);
     setFournisseurs((f.data as Fournisseur[]) ?? []);
+    setCommandes((cmd.data as Commande[]) ?? []);
+    setCommandeLignes((cl.data as CommandeLigne[]) ?? []);
     setArrivages((a.data as Arrivage[]) ?? []);
     setColis((c.data as Colis[]) ?? []);
     setEntrepots((e.data as Entrepot[]) ?? []);
@@ -72,7 +79,7 @@ export function Logistique() {
   if (loading) return <div className="text-slate-400">Chargement…</div>;
 
   const ctx = {
-    superviseur, charger, fournisseurs, arrivages, colis, entrepots, emplacements,
+    superviseur, charger, fournisseurs, commandes, commandeLignes, arrivages, colis, entrepots, emplacements,
     points, agents, missions, mouvements, stock,
   };
 
@@ -109,6 +116,7 @@ export function Logistique() {
       </div>
 
       {onglet === "bord" && <TabBord {...ctx} />}
+      {onglet === "commandes" && <TabCommandes {...ctx} />}
       {onglet === "arrivages" && <TabArrivages {...ctx} />}
       {onglet === "reception" && <TabReception {...ctx} />}
       {onglet === "points" && <TabPoints {...ctx} />}
@@ -119,7 +127,8 @@ export function Logistique() {
 
 type Ctx = {
   superviseur: boolean; charger: () => Promise<void>;
-  fournisseurs: Fournisseur[]; arrivages: Arrivage[]; colis: Colis[];
+  fournisseurs: Fournisseur[]; commandes: Commande[]; commandeLignes: CommandeLigne[];
+  arrivages: Arrivage[]; colis: Colis[];
   entrepots: Entrepot[]; emplacements: Emplacement[]; points: PointRetrait[];
   agents: Agent[]; missions: Mission[]; mouvements: MouvementStock[]; stock: StockLogistique[];
 };
@@ -211,11 +220,127 @@ function TabBord({ colis, stock, mouvements, points }: Ctx) {
   );
 }
 
+// ============================ COMMANDES FOURNISSEURS ============================
+const STATUT_CMD_TONE: Record<string, "gris" | "bleu" | "vert" | "orange" | "rouge"> = {
+  brouillon: "gris", envoyee: "bleu", confirmee: "bleu", partiellement_livree: "orange", livree: "vert", annulee: "rouge",
+};
+function TabCommandes({ superviseur, charger, fournisseurs, commandes, commandeLignes }: Ctx) {
+  const [busy, setBusy] = useState(false);
+  const [ref, setRef] = useState(""); const [idF, setIdF] = useState("");
+  const [dateS, setDateS] = useState(""); const [devise, setDevise] = useState("XOF"); const [note, setNote] = useState("");
+  const [lignes, setLignes] = useState<L.LigneCommande[]>([{ modele: "", quantite: 100, prix_unitaire: 0 }]);
+  const [nvF, setNvF] = useState(false); const [fRaison, setFRaison] = useState(""); const [fPays, setFPays] = useState("");
+
+  const total = lignes.reduce((n, l) => n + (l.quantite || 0) * (l.prix_unitaire || 0), 0);
+
+  async function creerF() {
+    if (!fRaison.trim()) return;
+    try { const f = await L.creerFournisseur(fRaison, fPays || "International", null, null); toast("Fournisseur créé.", "success"); setNvF(false); setFRaison(""); setFPays(""); await charger(); setIdF(f.id_fournisseur); }
+    catch (e) { toast(e instanceof Error ? e.message : "Erreur", "error"); }
+  }
+  async function creer() {
+    if (!ref.trim() || !idF || lignes.some((l) => !l.modele.trim() || l.quantite <= 0)) return toast("Complétez la référence, le fournisseur et les lignes.", "error");
+    setBusy(true);
+    try { await L.creerCommande(ref, idF, dateS || null, devise, note || null, lignes); toast("Bon de commande créé (brouillon).", "success"); setRef(""); setNote(""); setLignes([{ modele: "", quantite: 100, prix_unitaire: 0 }]); await charger(); }
+    catch (e) { toast(e instanceof Error ? e.message : "Erreur", "error"); } finally { setBusy(false); }
+  }
+  async function maj(id: string, statut: "envoyee" | "confirmee" | "livree" | "annulee") {
+    try { await L.majStatutCommande(id, statut); toast("Statut mis à jour.", "success"); await charger(); }
+    catch (e) { toast(e instanceof Error ? e.message : "Erreur", "error"); }
+  }
+
+  return (
+    <div className="grid lg:grid-cols-2 gap-5">
+      {superviseur && (
+        <div className="card p-5 space-y-3">
+          <div className="font-semibold flex items-center gap-2"><ShoppingCart size={17} className="text-pass-blue" /> Nouveau bon de commande</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-slate-500">Référence (BC)</label><input className={inputCls} value={ref} onChange={(e) => setRef(e.target.value)} placeholder="BC-2024-0031" /></div>
+            <div><label className="text-xs text-slate-500">Livraison souhaitée</label><input type="date" className={inputCls} value={dateS} onChange={(e) => setDateS(e.target.value)} /></div>
+          </div>
+          <div>
+            <label className="text-xs text-slate-500">Fournisseur</label>
+            <div className="flex gap-2">
+              <select className={inputCls} value={idF} onChange={(e) => setIdF(e.target.value)}>
+                <option value="">— choisir —</option>
+                {fournisseurs.map((f) => <option key={f.id_fournisseur} value={f.id_fournisseur}>{f.raison_sociale} ({f.pays})</option>)}
+              </select>
+              <button className="btn-ghost shrink-0" onClick={() => setNvF((v) => !v)}><Building2 size={15} /> Nouveau</button>
+            </div>
+          </div>
+          {nvF && (
+            <div className="rounded-lg border border-slate-200 p-3 space-y-2 bg-slate-50">
+              <div className="grid grid-cols-2 gap-2">
+                <input className={inputCls} placeholder="Raison sociale" value={fRaison} onChange={(e) => setFRaison(e.target.value)} />
+                <input className={inputCls} placeholder="Pays" value={fPays} onChange={(e) => setFPays(e.target.value)} />
+              </div>
+              <button className="btn-primary text-sm" onClick={creerF}>Enregistrer le fournisseur</button>
+            </div>
+          )}
+          <div className="space-y-2">
+            <label className="text-xs text-slate-500">Lignes de commande</label>
+            {lignes.map((l, i) => (
+              <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                <input className={`${inputCls} col-span-5`} placeholder="Modèle" value={l.modele} onChange={(e) => setLignes((a) => a.map((x, j) => j === i ? { ...x, modele: e.target.value } : x))} />
+                <input type="number" className={`${inputCls} col-span-3`} placeholder="Qté" value={l.quantite} onChange={(e) => setLignes((a) => a.map((x, j) => j === i ? { ...x, quantite: Number(e.target.value) } : x))} />
+                <input type="number" className={`${inputCls} col-span-3`} placeholder="P.U." value={l.prix_unitaire} onChange={(e) => setLignes((a) => a.map((x, j) => j === i ? { ...x, prix_unitaire: Number(e.target.value) } : x))} />
+                <button className="col-span-1 text-slate-400 hover:text-red-500" onClick={() => setLignes((a) => a.filter((_, j) => j !== i))}><X size={16} /></button>
+              </div>
+            ))}
+            <div className="flex items-center justify-between">
+              <button className="text-sm text-pass-blue hover:underline" onClick={() => setLignes((a) => [...a, { modele: "", quantite: 100, prix_unitaire: 0 }])}>+ Ajouter une ligne</button>
+              <div className="text-sm font-semibold">Total : {total.toLocaleString("fr-FR")} {devise}</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <input className={`${inputCls} w-24`} value={devise} onChange={(e) => setDevise(e.target.value)} placeholder="Devise" />
+            <input className={inputCls} placeholder="Note (facultatif)" value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+          <button className="btn-primary" onClick={creer} disabled={busy}>{busy ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Créer le bon de commande</button>
+        </div>
+      )}
+
+      <div className="card p-5">
+        <div className="font-semibold flex items-center gap-2 mb-3"><ShoppingCart size={17} className="text-pass-blue" /> Bons de commande</div>
+        {commandes.length === 0 ? <p className="text-sm text-slate-400">Aucune commande.</p> : (
+          <div className="space-y-3">
+            {commandes.map((c) => {
+              const f = fournisseurs.find((x) => x.id_fournisseur === c.id_fournisseur);
+              const ls = commandeLignes.filter((x) => x.id_commande === c.id_commande);
+              return (
+                <div key={c.id_commande} className="rounded-lg border border-slate-200 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="font-mono text-sm font-semibold">{c.reference}</div>
+                    <StatutPill tone={STATUT_CMD_TONE[c.statut]}>{L.LIBELLE_STATUT_COMMANDE[c.statut]}</StatutPill>
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5">{f?.raison_sociale} · {f?.pays} · {Number(c.montant_total).toLocaleString("fr-FR")} {c.devise}</div>
+                  <div className="mt-1.5 space-y-0.5">
+                    {ls.map((x) => <div key={x.id_ligne} className="text-xs text-slate-600 flex justify-between"><span>{x.modele}</span><span>×{x.quantite} · {Number(x.prix_unitaire).toLocaleString("fr-FR")}</span></div>)}
+                  </div>
+                  {superviseur && c.statut !== "livree" && c.statut !== "annulee" && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {c.statut === "brouillon" && <button className="btn-primary text-xs !py-1.5" onClick={() => maj(c.id_commande, "envoyee")}><Send size={13} /> Envoyer</button>}
+                      {c.statut === "envoyee" && <button className="btn-ghost text-xs !py-1.5" onClick={() => maj(c.id_commande, "confirmee")}>Marquer confirmée</button>}
+                      {(c.statut === "confirmee" || c.statut === "partiellement_livree") && <button className="btn-ghost text-xs !py-1.5" onClick={() => maj(c.id_commande, "livree")}>Marquer livrée</button>}
+                      <button className="text-xs text-red-500 hover:underline px-2" onClick={() => maj(c.id_commande, "annulee")}>Annuler</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ============================ ARRIVAGES & COLISAGE ============================
-function TabArrivages({ superviseur, charger, fournisseurs, arrivages, colis }: Ctx) {
+function TabArrivages({ superviseur, charger, fournisseurs, commandes, arrivages, colis }: Ctx) {
   const [busy, setBusy] = useState(false);
   const [ref, setRef] = useState("");
   const [idF, setIdF] = useState("");
+  const [idCmd, setIdCmd] = useState("");
   const [datePrevue, setDatePrevue] = useState("");
   const [lignes, setLignes] = useState<L.LigneColisage[]>([{ modele: "", quantite: 50, imei_debut: "" }]);
   // création fournisseur
@@ -232,9 +357,9 @@ function TabArrivages({ superviseur, charger, fournisseurs, arrivages, colis }: 
     if (!ref.trim() || !idF || lignes.some((l) => !l.modele.trim() || l.quantite <= 0)) return toast("Complétez la référence, le fournisseur et les lignes.", "error");
     setBusy(true);
     try {
-      await L.creerArrivage(ref, idF, datePrevue || null, lignes);
+      await L.creerArrivage(ref, idF, datePrevue || null, lignes, idCmd || null);
       toast("Arrivage créé — colis attendus générés.", "success");
-      setRef(""); setLignes([{ modele: "", quantite: 50, imei_debut: "" }]);
+      setRef(""); setIdCmd(""); setLignes([{ modele: "", quantite: 50, imei_debut: "" }]);
       await charger();
     } catch (e) { toast(e instanceof Error ? e.message : "Erreur", "error"); } finally { setBusy(false); }
   }
@@ -267,6 +392,13 @@ function TabArrivages({ superviseur, charger, fournisseurs, arrivages, colis }: 
               <button className="btn-primary text-sm" onClick={creerF} disabled={busy}>Enregistrer le fournisseur</button>
             </div>
           )}
+          <div>
+            <label className="text-xs text-slate-500">Commande d'origine (facultatif)</label>
+            <select className={inputCls} value={idCmd} onChange={(e) => setIdCmd(e.target.value)}>
+              <option value="">— aucune —</option>
+              {commandes.filter((c) => c.statut !== "annulee").map((c) => <option key={c.id_commande} value={c.id_commande}>{c.reference}</option>)}
+            </select>
+          </div>
           <div className="space-y-2">
             <label className="text-xs text-slate-500">Lignes de colisage (une boîte scannable par ligne)</label>
             {lignes.map((l, i) => (
@@ -296,7 +428,10 @@ function TabArrivages({ superviseur, charger, fournisseurs, arrivages, colis }: 
                     <div className="font-mono text-sm font-semibold">{a.reference}</div>
                     <StatutPill tone={a.statut === "attendu" ? "gris" : a.statut === "en_reception" ? "bleu" : "vert"}>{L.LIBELLE_STATUT_ARRIVAGE[a.statut]}</StatutPill>
                   </div>
-                  <div className="text-xs text-slate-500 mt-0.5">{f?.raison_sociale} · {f?.pays}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">
+                    {f?.raison_sociale} · {f?.pays}
+                    {a.id_commande && <span> · d'après {commandes.find((k) => k.id_commande === a.id_commande)?.reference ?? "commande"}</span>}
+                  </div>
                   <div className="mt-2 space-y-1">
                     {cs.map((c) => (
                       <div key={c.id_colis} className="flex items-center justify-between text-xs">

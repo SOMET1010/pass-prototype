@@ -2,8 +2,8 @@
 // réservées au superviseur). Chaque appel renvoie la ligne créée/mise à jour.
 import { supabase } from "./supabase";
 import type {
-  Arrivage, Colis, Emplacement, Entrepot, Equipe, Fournisseur, Mission,
-  RapportMission, StatutArrivage, StatutColis, StatutMission, TypeMouvement,
+  Arrivage, Colis, Commande, Emplacement, Entrepot, Equipe, Fournisseur, Mission,
+  RapportMission, StatutArrivage, StatutColis, StatutCommande, StatutMission, TypeMouvement,
 } from "./types";
 
 async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
@@ -21,9 +21,16 @@ export const creerEmplacement = (idEntrepot: string, code: string, description: 
 export const creerFournisseur = (raison: string, pays: string, email: string | null, tel: string | null) =>
   rpc<Fournisseur>("pass_creer_fournisseur", { p_raison: raison, p_pays: pays, p_email: email, p_tel: tel });
 
+export interface LigneCommande { modele: string; quantite: number; prix_unitaire?: number }
+export const creerCommande = (reference: string, idFournisseur: string, dateSouhaitee: string | null, devise: string, note: string | null, lignes: LigneCommande[]) =>
+  rpc<Commande>("pass_creer_commande", { p_reference: reference, p_id_fournisseur: idFournisseur, p_date_souhaitee: dateSouhaitee, p_devise: devise, p_note: note, p_lignes: lignes });
+
+export const majStatutCommande = (idCommande: string, statut: StatutCommande) =>
+  rpc<Commande>("pass_maj_statut_commande", { p_id_commande: idCommande, p_statut: statut });
+
 export interface LigneColisage { modele: string; quantite: number; imei_debut?: string; imei_fin?: string }
-export const creerArrivage = (reference: string, idFournisseur: string, datePrevue: string | null, lignes: LigneColisage[]) =>
-  rpc<Arrivage>("pass_creer_arrivage", { p_reference: reference, p_id_fournisseur: idFournisseur, p_date_prevue: datePrevue, p_lignes: lignes });
+export const creerArrivage = (reference: string, idFournisseur: string, datePrevue: string | null, lignes: LigneColisage[], idCommande?: string | null) =>
+  rpc<Arrivage>("pass_creer_arrivage", { p_reference: reference, p_id_fournisseur: idFournisseur, p_date_prevue: datePrevue, p_lignes: lignes, p_id_commande: idCommande ?? null });
 
 export const receptionnerColis = (codeBarre: string, quantiteRecue: number) =>
   rpc<Colis>("pass_receptionner_colis", { p_code_barre: codeBarre, p_quantite_recue: quantiteRecue });
@@ -56,6 +63,10 @@ export const cloturerMission = (idMission: string, distribues: number, retours: 
     p_incidents: incidents, p_observations: observations, p_lat: lat, p_lon: lon,
   });
 
+export const LIBELLE_STATUT_COMMANDE: Record<StatutCommande, string> = {
+  brouillon: "Brouillon", envoyee: "Envoyée", confirmee: "Confirmée",
+  partiellement_livree: "Partiellement livrée", livree: "Livrée", annulee: "Annulée",
+};
 export const LIBELLE_STATUT_ARRIVAGE: Record<StatutArrivage, string> = {
   attendu: "Attendu", en_reception: "En réception", receptionne: "Réceptionné", cloture: "Clôturé",
 };

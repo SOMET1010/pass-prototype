@@ -200,6 +200,30 @@ export type StatutColis = "attendu" | "recu" | "ecart" | "range";
 export type StatutMission = "preparee" | "en_cours" | "cloturee";
 export type TypeMouvement = "reception" | "rangement" | "transfert" | "remise" | "retour" | "ajustement";
 
+export type StatutCommande = "brouillon" | "envoyee" | "confirmee" | "partiellement_livree" | "livree" | "annulee";
+
+export interface Commande {
+  id_commande: string;
+  reference: string;
+  id_fournisseur: string;
+  date_commande: string;
+  date_souhaitee: string | null;
+  statut: StatutCommande;
+  montant_total: number;
+  devise: string;
+  note: string | null;
+  id_agent: string | null;
+  created_at: string;
+}
+
+export interface CommandeLigne {
+  id_ligne: string;
+  id_commande: string;
+  modele: string;
+  quantite: number;
+  prix_unitaire: number;
+}
+
 export interface Fournisseur {
   id_fournisseur: string;
   raison_sociale: string;
@@ -228,6 +252,7 @@ export interface Arrivage {
   id_arrivage: string;
   reference: string;
   id_fournisseur: string;
+  id_commande: string | null;
   date_prevue: string | null;
   date_reception: string | null;
   statut: StatutArrivage;
