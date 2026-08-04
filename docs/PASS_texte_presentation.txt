@@ -1,0 +1,60 @@
+PROGRAMME D'ACCÈS AUX SMARTPHONES SUBVENTIONNÉS (PASS)
+Texte de présentation — Conseil d'Administration
+
+■ Couverture
+Programme d'Accès aux Smartphones Subventionnés (PASS) — plateforme numérique de gestion de l'ANSUT, de l'enrôlement du bénéficiaire jusqu'à la preuve de remise du terminal. Version prototype de démonstration : les vérifications aux référentiels nationaux y sont simulées, aucune donnée réelle n'est traitée.
+
+■ Mission
+L'ANSUT porte le service universel des télécommunications. Le Programme d'Accès aux Smartphones Subventionnés met un smartphone entre les mains des bénéficiaires des programmes sociaux — un smartphone est aujourd'hui la porte d'entrée vers l'école, la santé, les services publics et l'inclusion financière. La plateforme repose sur quatre exigences : VÉRIFIER (identité, éligibilité, non-cumul, périmètre), PROUVER (chaque remise est tracée et opposable), INCLURE (les publics ruraux, non connectés ou analphabètes ne sont jamais exclus), PILOTER (stocks, délais et conformité suivis en temps réel).
+
+■ La plateforme en bref
+La plateforme couvre toute la chaîne : enrôlement assisté en moins d'une minute ; vérification d'éligibilité aux référentiels ONECI, RSU, opérateurs mobiles et registre IMEI ; décision tracée (validée ou refusée avec motif, unique et irréversible) ; remise du terminal avec IMEI, reçu et dossier probant ; pilotage des stocks et de l'audit. Le socle technique garantit l'intégrité : les règles sont inscrites dans la base de données, l'authentification des agents est par rôle, le journal d'audit est inaltérable, et les intégrations ANSUT (Hub et Cryptologie) sont raccordées.
+
+■ Le parcours
+Le parcours suit cinq étapes : (1) Enrôlement — scan des pièces, saisie assistée, consentement signé, en moins d'une minute ; (2) Vérification — contrôles ONECI, RSU, opérateurs et IMEI ; (3) Décision — éligible, à instruire ou refus motivé, réponse sous 12 h ; (4) Remise — terminal, IMEI, orientation vers le centre le plus proche disposant de stock ; (5) Reçu & cachet — reçu bénéficiaire et dossier probant scellé. Chaque étape alimente le dossier probant ; la décision et le non-cumul sont garantis en base, donc impossibles à contourner.
+
+■ Écran Accueil
+Écran d'accueil de l'agent : la mission de service public est rappelée en tête, suivie des indicateurs du jour (bénéficiaires enrôlés, délai moyen d'enrôlement, dossiers à instruire, terminaux remis) et du fil du parcours qui situe chaque dossier dans la chaîne. L'agent voit immédiatement où agir.
+
+■ Écran Enrôlement
+Enrôlement assisté : l'agent scanne les pièces disponibles (CNI — d'où le NNI, carte CMU, photo) et le dossier se pré-remplit automatiquement. Un chronomètre matérialise l'objectif « moins d'une minute ». Le consentement du bénéficiaire est recueilli par signature manuscrite — ou par témoin si la personne est analphabète, pour ne personne exclure.
+
+■ Écran Vérification
+Vérification d'éligibilité : quatre contrôles (ONECI pour l'identité, RSU pour l'éligibilité sociale, les opérateurs pour la ligne mobile, le registre IMEI pour le terminal). Le panneau « base des opérateurs » interroge Orange, MTN et Moov — chacun affiché à sa propre couleur de marque pour éviter toute confusion. L'agent conclut : valider, mettre en instruction, ou refuser avec motif. Dans le prototype, ces contrôles sont SIMULÉS ; la décision et le non-cumul, eux, sont bien effectifs en base.
+
+■ Écran Stock & retraits
+Stock et points de retrait : une cartographie situe les centres sur le territoire (Abidjan, Bouaké, Korhogo, Man, Odienné…). Le bénéficiaire éligible est orienté vers le centre le plus proche disposant de stock. Chaque centre affiche son stock, un seuil d'alerte et son gestionnaire ; un réassort entre centres est possible.
+
+■ Écran Reçu & preuve
+Reçu et preuve : le bénéficiaire repart avec un reçu simplifié (avec QR de suivi), tandis que le dossier probant complet est conservé séparément. La preuve de remise et la décision sont scellées par un cachet électronique — empreinte SHA-256 du document plus signature horodatée via la Cryptologie ANSUT — qui rend toute altération détectable et le dossier opposable.
+
+■ Écran Supervision
+Supervision et conformité : les délais de service (SLA) sont suivis en continu — enrôlement (< 1 min), réponse (< 12 h), remise. Le journal d'audit est inaltérable (en ajout seul) et chaque acte est horodaté. Les règles critiques (non-cumul, décision unique, quota) sont garanties par la base.
+
+■ Chaîne logistique
+Logistique — chaîne d'approvisionnement complète, du fournisseur au bénéficiaire, avec traçabilité par IMEI : (1) commande au fournisseur ; (2) arrivage et liste de colisage ; (3) réception des colis par scan avec détection des écarts ; (4) rangement en entrepôt par emplacement ; (5) transfert (bon de sortie) vers un point ; (6) ouverture d'un point PASS mobile et paramétrage de l'équipe ; (7) mission de terrain géolocalisée ; (8) rapport de mission. Chaque déplacement de stock est journalisé et toutes les écritures sont réservées au superviseur.
+
+■ Écran Logistique
+Tableau de bord logistique : colis attendus / reçus, écarts à vérifier, stock en entrepôt et aux points, nombre de points mobiles. En dessous, l'état du stock par lieu et par modèle, et le journal des derniers mouvements (réception, rangement, transfert, retour).
+
+■ Écran Commandes fournisseurs
+Commandes fournisseurs : création d'un bon de commande (fournisseur, lignes modèle/quantité/prix unitaire, montant total calculé), puis suivi du cycle de vie (brouillon → envoyée → confirmée → livrée). L'arrivage réel se rattache ensuite à la commande d'origine pour le rapprochement commandé / livré.
+
+■ Garanties
+Garanties de confiance : un contrôle affiché à l'écran peut être contourné ; une règle inscrite en base ne l'est pas — même un appel technique direct est rejeté. Sont garantis : non-cumul (une demande par personne et par campagne), décision irréversible, unicité de la CNI et de l'IMEI, preuve de remise obligatoire, respect du quota, et journal d'audit en ajout seul. C'est le socle de l'intégrité du programme.
+
+■ Intégrations ANSUT
+Intégrations institutionnelles : la plateforme réutilise les passerelles ANSUT déjà en service. ANSUT Hub (messagerie) notifie réellement le bénéficiaire ou son contact — SMS, e-mail, WhatsApp — du lieu de retrait et de la décision, avec repli par convocation papier pour l'inclusion. La Cryptologie ANSUT scelle les pièces probantes. La chaîne est réelle : elle bascule en mode « réel » dès que les accès sont fournis, et reste en mode « simulé » sinon, sans jamais bloquer le parcours.
+
+■ Identité neutre
+Positionnement visuel : la charte ANSUT (bleu + orange) est proche de Moov, et l'orange est celui d'Orange CI. Une piste est une interface neutre (achromatique) : le logo reste la seule marque, et les opérateurs — chacun à sa couleur — ressortent. Le neutre exprime l'impartialité de l'Agence, qui arbitre au-dessus des opérateurs plutôt que de leur ressembler. À trancher par le Conseil.
+
+■ Périmètre du prototype
+Périmètre du prototype. Démontré : le parcours complet, les règles effectives en base, l'audit inaltérable, les stocks et la cartographie, la chaîne d'intégration Hub + Cryptologie. À raccorder ou arbitrer : les accès réels aux référentiels (ONECI, RSU, opérateurs, IMEI) aujourd'hui SIMULÉS, les identifiants des passerelles, l'hébergement souverain et l'homologation, la chaîne de preuve matérielle. Aucune donnée réelle n'est traitée à ce stade.
+
+■ Feuille de route
+Prochaines étapes, du prototype au pilote : (1) signer les conventions d'accès aux référentiels pour passer les vérifications en réel ; (2) fournir les identifiants des passerelles Hub et Cryptologie — bascule immédiate en mode réel ; (3) héberger et homologuer la plateforme selon les exigences de l'État ; (4) déployer sur un centre pilote, mesurer les délais et l'inclusion, puis étendre.
+
+■ Clôture
+Une plateforme au service de l'inclusion numérique : vérifiée, prouvée, inclusive. Merci.
+
