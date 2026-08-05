@@ -7,6 +7,7 @@ export default function Seances() {
   const { data, dateRef } = useStore();
   const liste = [...data.seances].sort((a, b) => a.date.localeCompare(b.date));
   const tache = (id: string) => data.taches.find((t) => t.id === id)?.libelle ?? id;
+  const docTitre = (id: string) => data.documents.find((d) => d.id === id)?.titre ?? id;
 
   return (
     <div>
@@ -41,6 +42,15 @@ export default function Seances() {
                   )}
                 </div>
               </div>
+
+              {s.documents.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                  <span className="text-xs uppercase tracking-wide text-slate-400">Documents</span>
+                  {s.documents.map((id) => (
+                    <span key={id} className="chip bg-slate-100 text-slate-600">{docTitre(id)}</span>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -8,6 +8,7 @@
 
 import type {
   WorkspaceData, Chantier, Tache, Jalon, Decision, Risque, Partenaire, Seance, Membre, Fonction, Priorite, StatutTache,
+  Document as DocumentPass,
 } from "../types";
 
 export const DATE_REFERENCE = "2026-08-05";
@@ -175,11 +176,34 @@ const taches: Tache[] = Object.entries(specs).map(([id, s]) => ({
   relances: [],
 }));
 
+// ─────────────────────────────────────────────────────────── Documents (pièces produites — Point d'étape §2)
+const documents: DocumentPass[] = [
+  { id: "doc-note-ca", titre: "Note de décision au Conseil d'administration", version: "v1", statut: "valide", auteur: "Coordination", date: "2026-07-30", confidentiel: false, chantierId: "ch-coordination" },
+  { id: "doc-planches", titre: "Présentation du dispositif (treize planches)", version: "v1", statut: "valide", auteur: "Coordination", date: "2026-07-30", confidentiel: false, chantierId: "ch-coordination" },
+  { id: "doc-note-president", titre: "Note de séance à l'attention du Président", version: "v1", statut: "valide", auteur: "Coordination", date: "2026-07-30", confidentiel: true, chantierId: "ch-coordination" },
+  { id: "doc-cctp", titre: "Critères de conformité du terminal (quatorze critères)", version: "v1", statut: "valide", auteur: "Marchés", date: "2026-07-28", confidentiel: false, chantierId: "ch-marche" },
+  { id: "doc-grille-eval", titre: "Grille d'évaluation appliquée aux offres terminal", version: "v1", statut: "valide", auteur: "Marchés", date: "2026-07-31", confidentiel: false, chantierId: "ch-marche" },
+  { id: "doc-analyse-offres", titre: "Analyse des offres de consultation (7 consultées, 6 réponses)", version: "v1", statut: "valide", auteur: "Marchés", date: "2026-08-01", confidentiel: true, chantierId: "ch-marche" },
+  { id: "doc-methode-ciblage", titre: "Méthode de ciblage en quatre temps", version: "v1", statut: "valide", auteur: "Données", date: "2026-07-25", confidentiel: false, chantierId: "ch-donnees" },
+  { id: "doc-grille-score", titre: "Grille de critères pondérés (score d'éligibilité)", version: "v1", statut: "valide", auteur: "Données", date: "2026-07-25", confidentiel: false, chantierId: "ch-donnees" },
+  { id: "doc-classeur-ciblage", titre: "Classeur d'application du ciblage sur données réelles", version: "v1", statut: "valide", auteur: "Données", date: "2026-07-28", confidentiel: true, chantierId: "ch-donnees" },
+  { id: "doc-cdc-eligibilite", titre: "Cahier des charges du moteur d'éligibilité", version: "v1", statut: "valide", auteur: "Plateforme", date: "2026-07-29", confidentiel: false, chantierId: "ch-plateforme" },
+  { id: "doc-conventions", titre: "Canevas des quatre conventions partenaires", version: "v1", statut: "projet", auteur: "Juridique", date: "2026-07-30", confidentiel: false, chantierId: "ch-juridique" },
+  { id: "doc-saisines", titre: "Projets de courriers de saisine des partenaires", version: "v1", statut: "projet", auteur: "Juridique", date: "2026-07-30", confidentiel: false, chantierId: "ch-juridique" },
+  { id: "doc-cadrage-marches", titre: "Cadrage des marchés de prestation (éditeur + logistique)", version: "v1", statut: "valide", auteur: "Marchés", date: "2026-07-31", confidentiel: false, chantierId: "ch-marche" },
+  { id: "doc-feuille-route", titre: "Feuille de route et répartition des chantiers par référent", version: "v1", statut: "valide", auteur: "Coordination", date: "2026-08-04", confidentiel: false, chantierId: "ch-coordination" },
+  { id: "doc-plan-activite", titre: "Plan d'activité (août 2026 – janvier 2027)", version: "v1", statut: "valide", auteur: "Coordination", date: "2026-08-04", confidentiel: false, chantierId: "ch-coordination" },
+  { id: "doc-chronogramme", titre: "Chronogramme prévisionnel", version: "v1", statut: "valide", auteur: "Coordination", date: "2026-08-04", confidentiel: false, chantierId: "ch-coordination" },
+  { id: "doc-point-etape", titre: "Point d'étape — Coordination et Direction Générale", version: "v1", statut: "valide", auteur: "Coordination", date: "2026-08-04", confidentiel: false, chantierId: "ch-coordination" },
+  { id: "doc-compendium", titre: "Compendium du programme PASS (douze livres)", version: "v4", statut: "valide", auteur: "Coordination", date: "2026-07-20", confidentiel: false, chantierId: "ch-coordination" },
+];
+
 // ─────────────────────────────────────────────────────────── Séances / comités
 const seances: Seance[] = [
-  { id: "s-copil-aout", instance: "Comité de pilotage", date: "2026-08-13", rythme: "Mensuel", participants: ["Comité de pilotage", "Chef de programme"], ordreDuJour: ["Recommandations avant publication", "Décisions à rendre au 11 août", "État des chantiers"], releveDecisions: [], actionsGenerees: [], documents: [] },
-  { id: "s-dg-aout", instance: "Direction Générale", date: "2026-08-11", rythme: "Bimensuel", participants: ["Direction Générale", "Chef de programme"], ordreDuJour: ["Rendre les quatre premières décisions", "Alertes calendrier"], releveDecisions: [], actionsGenerees: ["t9"], documents: [] },
-  { id: "s-copoperationnel", instance: "Comité opérationnel", date: "2026-08-07", rythme: "Hebdomadaire", participants: ["Référents de chantier", "Chef de programme"], ordreDuJour: ["Avancement par chantier", "Levée des blocages"], releveDecisions: [], actionsGenerees: [], documents: [] },
+  { id: "s-ca-juillet", instance: "Conseil d'administration", date: "2026-07-30", rythme: "Trimestriel", participants: ["Conseil d'administration", "Direction Générale"], ordreDuJour: ["Validation du programme PASS", "Conditions de mise en œuvre"], releveDecisions: ["Programme validé", "Trois exigences posées : respecter la procédure des marchés publics, établir solidement le ciblage, entrer dans l'exécution", "Quatre points renvoyés à la Direction Générale : montant engageable, mode de passation, base d'identification, date de lancement"], actionsGenerees: [], documents: ["doc-note-ca", "doc-planches"] },
+  { id: "s-copoperationnel", instance: "Comité opérationnel", date: "2026-08-07", rythme: "Hebdomadaire", participants: ["Référents de chantier", "Chef de programme"], ordreDuJour: ["Avancement par chantier", "Levée des blocages", "Actions de la semaine du 4 août"], releveDecisions: [], actionsGenerees: ["t1", "t8"], documents: [] },
+  { id: "s-dg-aout", instance: "Direction Générale", date: "2026-08-11", rythme: "Bimensuel", participants: ["Direction Générale", "Chef de programme"], ordreDuJour: ["Rendre les quatre premières décisions (montant, mode de passation, base d'identification, date de lancement)", "Alertes calendrier"], releveDecisions: [], actionsGenerees: ["t9"], documents: ["doc-point-etape"] },
+  { id: "s-copil-aout", instance: "Comité de pilotage", date: "2026-08-13", rythme: "Mensuel", participants: ["Comité de pilotage", "Chef de programme"], ordreDuJour: ["Recommandations avant publication", "Suivi des décisions rendues", "État des chantiers"], releveDecisions: [], actionsGenerees: [], documents: ["doc-feuille-route"] },
 ];
 
 export const SEED: WorkspaceData = {
@@ -191,7 +215,7 @@ export const SEED: WorkspaceData = {
     dateFin: "2027-07-31",
     statut: "En cours — décisions et procédure de marché",
   },
-  chantiers, taches, jalons, decisions, risques, documents: [], partenaires, seances, membres,
+  chantiers, taches, jalons, decisions, risques, documents, partenaires, seances, membres,
 };
 
 export const ROLES = [
