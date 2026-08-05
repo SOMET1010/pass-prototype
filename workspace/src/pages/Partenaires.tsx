@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Users, Send, Copy, Check, Radio, Building2, Truck } from "lucide-react";
+import { Send, Radio, Building2, Truck } from "lucide-react";
 import { useStore } from "../store/store";
 import { useAuth } from "../auth/AuthContext";
 import type { Partenaire, StatutRelation, NaturePartenaire } from "../types";
-import { EnTete, BadgeRelation, Modale } from "../components/ui";
+import { EnTete, BadgeRelation } from "../components/ui";
 import { formatDate, libelleEcheance } from "../lib/dates";
-import { brouillonPartenaire, texteBrouillon } from "../lib/notifications";
+import { brouillonPartenaire } from "../lib/notifications";
 import { partenairesARelancer } from "../lib/roadmap";
+import { Notifier } from "../components/gateway-ui";
 
 const STATUTS: { id: StatutRelation; label: string }[] = [
   { id: "a_engager", label: "À engager" },
@@ -73,27 +74,10 @@ export default function Partenaires() {
         })}
       </div>
 
-      {notif && <Modale titre={`Notifier — ${notif.libelle}`} onClose={() => setNotif(null)}><Notif p={notif} data={data} /></Modale>}
-    </div>
-  );
-}
-
-function Notif({ p, data }: { p: Partenaire; data: any }) {
-  const b = brouillonPartenaire(p, data);
-  const texte = texteBrouillon(b);
-  const [copie, setCopie] = useState(false);
-  return (
-    <div className="space-y-3 text-sm">
-      <p className="text-xs text-slate-500">Brouillon généré à partir de l'état de la relation. Vérifiez le destinataire, ajustez le texte, puis envoyez par votre messagerie ou courrier officiel.</p>
-      <pre className="whitespace-pre-wrap rounded-lg bg-slate-50 p-4 text-xs text-slate-700 leading-relaxed">{texte}</pre>
-      <div className="flex justify-end gap-2">
-        <button className="btn-ghost" onClick={() => { navigator.clipboard?.writeText(texte); setCopie(true); }}>
-          {copie ? <><Check size={15} /> Copié</> : <><Copy size={15} /> Copier</>}
-        </button>
-        <a className="btn-primary" href={`mailto:${b.email ?? ""}?subject=${encodeURIComponent(b.objet)}&body=${encodeURIComponent(b.corps)}`}>
-          <Send size={15} /> Ouvrir dans la messagerie
-        </a>
-      </div>
+      {notif && (() => {
+        const b = brouillonPartenaire(notif, data);
+        return <Notifier titre={`Notifier — ${notif.libelle}`} defautTo={b.email ?? ""} defautSubject={b.objet} defautContent={b.corps} onClose={() => setNotif(null)} />;
+      })()}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { useStore } from "../store/store";
+import { BoutonReglages } from "./gateway-ui";
 import { decisionsBloquantes, tachesEnRetard } from "../lib/roadmap";
 import { formatDate } from "../lib/dates";
 
@@ -63,6 +64,7 @@ export default function Layout() {
               className="mt-1 w-full rounded bg-white/10 border border-white/20 px-2 py-1 text-xs text-white" />
           </label>
           <div className="text-[11px] text-white/60">Connecté : <span className="text-white font-medium">{roleLibelle}</span></div>
+          <BoutonReglages />
           <div className="flex gap-2">
             <button onClick={() => { if (confirm("Réinitialiser toutes les données du workspace ?")) reinitialiser(); }}
               className="btn btn-sm bg-white/10 text-white/80 hover:bg-white/20 flex-1"><RotateCcw size={13} /> Réinit.</button>

@@ -8,6 +8,7 @@ import { EnTete, BadgeTache, BadgePriorite, Avancement, Modale, Vide } from "../
 import { formatDate, libelleEcheance, estEnRetard } from "../lib/dates";
 import { dependancesNonSatisfaites } from "../lib/roadmap";
 import { brouillonRelanceTache, texteBrouillon } from "../lib/notifications";
+import { Notifier } from "../components/gateway-ui";
 
 const COLONNES: { id: StatutTache; label: string }[] = [
   { id: "a_faire", label: "À faire" },
@@ -146,6 +147,7 @@ function DetailTache({ t, onClose }: { t: Tache; onClose: () => void }) {
   const [note, setNote] = useState(t.note ?? "");
   const [copie, setCopie] = useState(false);
   const [relance, setRelance] = useState(false);
+  const [notifier, setNotifier] = useState(false);
 
   const chantier = data.chantiers.find((c) => c.id === t.chantierId);
   const nonSatisfaites = dependancesNonSatisfaites(t, data);
@@ -210,7 +212,12 @@ function DetailTache({ t, onClose }: { t: Tache; onClose: () => void }) {
       <div className="rounded-lg border border-slate-200 p-3">
         <div className="flex items-center justify-between">
           <span className="font-medium text-slate-700 flex items-center gap-1.5"><Bell size={14} className="text-pass-orange" /> Diligenter</span>
-          {peutEcrire && <button className="btn-ghost btn-sm" onClick={diligenter}><Bell size={13} /> Relancer le responsable</button>}
+          {peutEcrire && (
+            <div className="flex gap-2">
+              <button className="btn-ghost btn-sm" onClick={diligenter}><Bell size={13} /> Marquer relancé</button>
+              <button className="btn-accent btn-sm" onClick={() => setNotifier(true)}><Bell size={13} /> Envoyer via Hub</button>
+            </div>
+          )}
         </div>
         {relance && <p className="text-xs text-emerald-600 mt-2">Relance enregistrée dans l'historique de la tâche.</p>}
         {t.relances.length > 0 && (
@@ -231,6 +238,11 @@ function DetailTache({ t, onClose }: { t: Tache; onClose: () => void }) {
         <div className="flex justify-end gap-2">
           <button className="btn-primary" onClick={enregistrer}>Enregistrer</button>
         </div>
+      )}
+
+      {notifier && (
+        <Notifier titre={`Relancer — ${t.libelle}`} defautTo={brouillon.email ?? ""} defautSubject={brouillon.objet} defautContent={brouillon.corps}
+          onClose={() => { setNotifier(false); diligenter(); }} />
       )}
     </div>
   );

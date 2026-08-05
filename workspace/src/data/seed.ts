@@ -30,20 +30,25 @@ const jalons: Jalon[] = [
   { id: "jal-arbitrages", libelle: "Arbitrages DG (montant, mode de passation, base d'identification, pilote)", datePrevue: "2026-08-15", nature: "decision", chantierId: "ch-coordination", ceQuiEnDepend: "La publication de l'appel d'offres", dependances: [], decisif: true, statut: "en_cours" },
   { id: "jal-publication", libelle: "Publication de l'appel d'offres", datePrevue: "2026-08-20", nature: "reglementaire", chantierId: "ch-marche", ceQuiEnDepend: "Tout l'aval du calendrier", dependances: ["jal-arbitrages"], decisif: true, statut: "a_venir" },
   { id: "jal-remise-offres", libelle: "Remise des offres", datePrevue: "2026-10-05", nature: "reglementaire", chantierId: "ch-marche", ceQuiEnDepend: "Le jugement et l'attribution", dependances: ["jal-publication"], decisif: true, statut: "a_venir" },
-  { id: "jal-signature", libelle: "Signature du marché", datePrevue: "2026-11-30", nature: "reglementaire", chantierId: "ch-marche", ceQuiEnDepend: "Le lancement de la fabrication", dependances: ["jal-remise-offres"], decisif: true, statut: "a_venir" },
+  { id: "jal-signature", libelle: "Signature du marché", datePrevue: "2026-11-24", nature: "reglementaire", chantierId: "ch-marche", ceQuiEnDepend: "Le lancement de la fabrication", dependances: ["jal-remise-offres"], decisif: true, statut: "a_venir" },
   { id: "jal-remises-pilote", libelle: "Ouverture des remises du pilote", datePrevue: "2026-12-15", nature: "industriel", chantierId: "ch-coordination", ceQuiEnDepend: "La validation du dispositif", dependances: ["jal-signature"], decisif: true, statut: "a_venir" },
   { id: "jal-livraison-lot1", libelle: "Livraison du premier lot du déploiement", datePrevue: "2027-01-20", nature: "industriel", chantierId: "ch-logistique", ceQuiEnDepend: "Les premières remises du déploiement", dependances: ["jal-signature"], decisif: true, statut: "a_venir" },
   { id: "jal-rapport-pilote", libelle: "Rapport de phase pilote", datePrevue: "2027-01-31", nature: "interne", chantierId: "ch-coordination", ceQuiEnDepend: "L'affermissement des tranches suivantes", dependances: ["jal-remises-pilote"], decisif: true, statut: "a_venir" },
 ];
 
 // ─────────────────────────────────────────────────────────── Décisions (registre — priorité n°1)
+// Les neuf arbitrages du Point d'étape (situation au 4 août 2026, après CA du 30 juillet).
+// Les quatre premiers conditionnent le lancement de la procédure de marché.
 const decisions: Decision[] = [
-  { id: "dec-montant", libelle: "Montant engageable sur l'exercice 2026", ceQuElleConditionne: "La publication de l'appel d'offres du 20 août", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-11", bloquante: true, chantierId: "ch-budget", jalonsBloques: ["jal-publication"] },
-  { id: "dec-passation", libelle: "Mode de passation, arrêté avec les services compétents", ceQuElleConditionne: "La publication de l'appel d'offres du 20 août", instance: "Services compétents", statut: "a_instruire", echeance: "2026-08-11", bloquante: true, chantierId: "ch-marche", jalonsBloques: ["jal-publication"] },
-  { id: "dec-identification", libelle: "Base d'identification des bénéficiaires", ceQuElleConditionne: "La publication de l'appel d'offres et le ciblage", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-11", bloquante: true, chantierId: "ch-donnees", jalonsBloques: ["jal-publication"] },
-  { id: "dec-pilote", libelle: "Phase pilote : principe, volume et périmètre", ceQuElleConditionne: "La publication de l'appel d'offres et l'ouverture des remises du pilote", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-11", bloquante: true, chantierId: "ch-coordination", jalonsBloques: ["jal-publication", "jal-remises-pilote"] },
-  { id: "dec-delegation", libelle: "Délégation d'approbation du marché", ceQuElleConditionne: "La signature du marché principal", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-09-30", bloquante: true, chantierId: "ch-juridique", jalonsBloques: ["jal-signature"] },
-  { id: "dec-dedouanement", libelle: "Prise en charge du dédouanement", ceQuElleConditionne: "L'enlèvement de la marchandise au port", instance: "Comité opérationnel", statut: "a_instruire", echeance: "2026-08-29", bloquante: false, chantierId: "ch-logistique", jalonsBloques: ["jal-livraison-lot1"] },
+  { id: "dec-montant", libelle: "Montant engageable sur 2026", ceQuElleConditionne: "Le volume du marché et sa structure en tranches", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-11", bloquante: true, chantierId: "ch-budget", jalonsBloques: ["jal-publication"] },
+  { id: "dec-passation", libelle: "Mode de passation retenu", ceQuElleConditionne: "Le calendrier entier de la procédure", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-11", bloquante: true, chantierId: "ch-marche", jalonsBloques: ["jal-publication"] },
+  { id: "dec-identification", libelle: "Base d'identification des bénéficiaires", ceQuElleConditionne: "Les conventions à engager et le paramétrage de la plateforme", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-11", bloquante: true, chantierId: "ch-donnees", jalonsBloques: ["jal-publication"] },
+  { id: "dec-lancement", libelle: "Date de lancement annoncée", ceQuElleConditionne: "La communication et les engagements publics", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-11", bloquante: true, chantierId: "ch-communication", jalonsBloques: ["jal-publication"] },
+  { id: "dec-pilote", libelle: "Phase pilote : principe et périmètre", ceQuElleConditionne: "La possibilité de remises avant la fin de l'année", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-11", bloquante: true, chantierId: "ch-coordination", jalonsBloques: ["jal-remises-pilote"] },
+  { id: "dec-delegation", libelle: "Délégation d'approbation du marché", ceQuElleConditionne: "La signature du marché sans convoquer une séance (sinon +3 semaines)", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-18", bloquante: true, chantierId: "ch-juridique", jalonsBloques: ["jal-signature"] },
+  { id: "dec-paiement", libelle: "Paiement fractionné de la contribution", ceQuElleConditionne: "L'accès réel des ménages les plus pauvres — à trancher avant la première remise", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-25", bloquante: false, chantierId: "ch-budget", jalonsBloques: [] },
+  { id: "dec-dedouanement", libelle: "Prise en charge du dédouanement", ceQuElleConditionne: "Le périmètre du marché logistique (offres libellées « rendu au port »)", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-08-25", bloquante: false, chantierId: "ch-logistique", jalonsBloques: ["jal-livraison-lot1"] },
+  { id: "dec-vocale", libelle: "Commande vocale : engager ou différer", ceQuElleConditionne: "Une clause du marché terminal et un volet de la plateforme", instance: "Direction Générale", statut: "a_instruire", echeance: "2026-09-04", bloquante: false, chantierId: "ch-plateforme", jalonsBloques: [] },
 ];
 
 // ─────────────────────────────────────────────────────────── Risques (facteurs de décalage — chronogramme)
@@ -54,6 +59,10 @@ const risques: Risque[] = [
   { id: "r-fabrication", libelle: "Délai de fabrication de l'offre retenue (45 à 80 jours)", effet: "Décalage des premières remises", parade: "Critère d'attribution pondéré sur le délai de livraison", maitrise: "partagee", gravite: "moderee", probabilite: "elevee", statut: "ouvert", chantierId: "ch-marche" },
   { id: "r-dedouanement", libelle: "Dédouanement non tranché", effet: "Immobilisation de la marchandise au port", parade: "Décision écrite avant fin août ; rencontre Douanes", maitrise: "interne", gravite: "elevee", probabilite: "moderee", statut: "ouvert", chantierId: "ch-logistique" },
   { id: "r-conventions", libelle: "Conventions non signées", effet: "L'enrôlement ne peut ouvrir en mode vérifié", parade: "Séminaire d'engagement daté ; projets transmis dès août", maitrise: "partagee", gravite: "elevee", probabilite: "moderee", statut: "ouvert", chantierId: "ch-juridique" },
+  { id: "r-decret", libelle: "Projet de décret sur l'identification", effet: "Le numéro national deviendrait obligatoire pour tout abonnement — or notre cible est la population la moins enregistrée", parade: "Instruction engagée ; suivi de l'avancement du texte", maitrise: "hors_de_notre_main", gravite: "elevee", probabilite: "moderee", statut: "ouvert", chantierId: "ch-donnees" },
+  { id: "r-exoneration", libelle: "Exonération douanière non arrêtée", effet: "Détermine le nombre de bénéficiaires à enveloppe constante", parade: "Suivi en cours avec les Douanes ; décision de dédouanement", maitrise: "partagee", gravite: "moderee", probabilite: "moderee", statut: "ouvert", chantierId: "ch-logistique" },
+  { id: "r-vocale", libelle: "Commande vocale annoncée mais non disponible au lancement", effet: "Écart entre la communication et le produit livré", parade: "Reformulation des supports ; décision engager/différer (arbitrage n°9)", maitrise: "interne", gravite: "faible", probabilite: "elevee", statut: "ouvert", chantierId: "ch-communication" },
+  { id: "r-formalites", libelle: "Formalités régulateur : 30 jours d'instruction", effet: "Préalable à la mise en service — tout retard de dépôt décale la mise en service", parade: "Dépôt des saisines dès cette semaine", maitrise: "interne", gravite: "moderee", probabilite: "moderee", statut: "ouvert", chantierId: "ch-plateforme" },
 ];
 
 // ─────────────────────────────────────────────────────────── Partenaires (suivi *sur* eux, non *avec* eux)
@@ -135,10 +144,10 @@ const specs: Record<string, Spec> = {
   t32: ["Rédiger le manuel opérationnel", "ch-coordination", "Coordination", "2026-10-31", "Première version", "basse", "a_faire", 0],
   t33: ["Obtenir la délégation d'approbation", "ch-juridique", "Juridique", "2026-09-30", "Délibération", "haute", "a_faire", 0],
   t34: ["Remise des offres et jugement", "ch-marche", "Marchés", "2026-10-05", "Rapport d'évaluation", "haute", "a_faire", 0, ["t16"], "jal-remise-offres"],
-  t35: ["Attribution et notification", "ch-marche", "Marchés", "2026-10-31", "Notification adressée", "haute", "a_faire", 0, ["t34"]],
+  t35: ["Attribution et notification", "ch-marche", "Marchés", "2026-11-05", "Notification adressée (après non-objection)", "haute", "a_faire", 0, ["t34"]],
   t36: ["Attribuer et signer le marché pilote", "ch-marche", "Marchés", "2026-10-15", "Marché signé", "moyenne", "a_faire", 0, ["t20"]],
   // Novembre — décembre
-  t37: ["Signer le marché principal", "ch-marche", "Direction Générale", "2026-11-30", "Marché signé", "haute", "a_faire", 0, ["t35", "t33"], "jal-signature"],
+  t37: ["Signer le marché principal", "ch-marche", "Direction Générale", "2026-11-24", "Marché signé (après délai de recours)", "haute", "a_faire", 0, ["t35", "t33"], "jal-signature"],
   t38: ["Signer les conventions partenaires", "ch-juridique", "Direction Générale", "2026-11-30", "Quatre conventions", "haute", "a_faire", 0, ["t22", "t25", "t26"]],
   t39: ["Réceptionner et dédouaner le lot pilote", "ch-logistique", "Logistique", "2026-11-30", "Marchandise enlevée", "haute", "a_faire", 0, ["t24", "t37"]],
   t40: ["Livrer et équiper les points de remise", "ch-logistique", "Logistique", "2026-12-15", "Points opérationnels", "moyenne", "a_faire", 0, ["t31"]],
@@ -177,10 +186,10 @@ export const SEED: WorkspaceData = {
   programme: {
     id: "prog-pass",
     libelle: "Programme PASS — Accès aux Smartphones Subventionnés",
-    description: "Programme pluriannuel porté par l'ANSUT. Ce workspace en pilote l'exécution : décisions, jalons, chantiers, actions, risques, documents et partenaires. Outil interne — aucune donnée de bénéficiaire.",
+    description: "Programme pluriannuel porté par l'ANSUT, validé par le Conseil d'administration du 30 juillet 2026. Ce workspace en pilote l'exécution : décisions, jalons, chantiers, actions, risques, documents et partenaires. Ciblage acquis : 377 localités du vivier identifiées (962 154 habitants, ~594 611 adultes) après filtre réseau. Outil interne — aucune donnée de bénéficiaire.",
     dateDebut: "2026-08-04",
     dateFin: "2027-07-31",
-    statut: "En cours — préparation et procédure de marché",
+    statut: "En cours — décisions et procédure de marché",
   },
   chantiers, taches, jalons, decisions, risques, documents: [], partenaires, seances, membres,
 };
