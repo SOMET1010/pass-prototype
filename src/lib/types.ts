@@ -13,6 +13,58 @@ export type SensDecision = "validee" | "refusee";
 export type StatutTerminal = "en_stock" | "remis" | "perdu" | "bloque";
 export type MoyenConsentement = "signature" | "assiste_temoin" | "otp";
 
+// ===================== ÉLIGIBILITÉ v3 (CDC v3) =====================
+export type StatutRegularite = "recevable" | "refus" | "a_instruire";
+export type RangPriorite = "P1" | "P2" | "P3" | "P4";
+
+export interface Parametre {
+  cle: string;
+  libelle: string;
+  groupe: string;
+  type: string;
+  unite: string | null;
+  arrete: boolean;
+  description: string | null;
+  valeur: string | null;
+  maj_le: string | null;
+  maj_par: string | null;
+  motif: string | null;
+}
+
+export interface EvaluationIndividuelle {
+  id_evaluation: string;
+  id_demande: string;
+  statut_regularite: StatutRegularite;
+  score: number | null;
+  rang_priorite: RangPriorite | null;
+  parametres: Record<string, string>;
+  est_simule: boolean;
+  id_agent: string | null;
+  horodatage: string;
+}
+
+export interface ControleRegularite {
+  id_controle: string;
+  id_evaluation: string;
+  controle: string;
+  resultat: ResultatVerif;
+  bloquant: boolean;
+  source: string | null;
+  detail: string | null;
+  ordre: number;
+}
+
+export interface ScoreDimension {
+  id_dimension: string;
+  id_evaluation: string;
+  dimension: string;
+  libelle: string;
+  valeur: number;
+  poids: number;
+  contribution: number;
+  detail: string | null;
+}
+
 export interface Agent {
   id_agent: string;
   user_id: string | null;

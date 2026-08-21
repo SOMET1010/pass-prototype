@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
 import { ParcoursStepper } from "../components/ParcoursStepper";
+import { EvaluationV3 } from "../components/EvaluationV3";
 import { pointRecommande } from "../lib/zones";
 import { marqueOperateur } from "../lib/operateurs";
 import { envoyerNotification } from "../lib/ansut";
@@ -263,6 +264,9 @@ export function Verification() {
   return (
     <div className="space-y-6">
       <ParcoursStepper active={etapeActive} refused={decision?.sens === "refusee"} />
+
+      {/* Éligibilité v3 : régularité (bloquante) séparée du score C1–C5 → rang P1–P4 */}
+      <EvaluationV3 idDemande={demande.id_demande} />
 
       {/* En-tête dossier */}
       <div className="flex flex-wrap items-start justify-between gap-3">

@@ -9,6 +9,7 @@ import {
   Warehouse,
   Truck,
   Wrench,
+  SlidersHorizontal,
   Info,
   LogOut,
   ShieldAlert,
@@ -27,6 +28,7 @@ const NAV = [
   { to: "/logistique", label: "Logistique", icon: Truck },
   { to: "/sav", label: "SAV", icon: Wrench },
   { to: "/supervision", label: "Supervision", icon: LayoutDashboard },
+  { to: "/parametres", label: "Paramètres", icon: SlidersHorizontal },
   { to: "/a-propos", label: "À propos", icon: Info },
 ];
 
