@@ -65,6 +65,42 @@ export interface ScoreDimension {
   detail: string | null;
 }
 
+// ===================== CIBLAGE GÉOGRAPHIQUE (CDC v3 §2) =====================
+export interface Localite {
+  identifiant_localite: string;
+  nom: string; region: string; departement: string | null; sous_prefecture: string | null;
+  latitude: number | null; longitude: number | null;
+  population: number; taux_pauvrete: number; taux_possession: number; part_femmes_jeunes: number;
+  rural: boolean; distance_site_km: number;
+  couverture_2g: boolean; couverture_3g: boolean; couverture_4g: boolean;
+  electrifiee: boolean; point_recharge: boolean; point_remise_id: string | null;
+}
+export interface CiblageGeo {
+  id_ciblage: string; id_campagne: string | null;
+  volume_total: number; volume_score: number; volume_reserve: number;
+  parametres: Record<string, string>; id_agent: string | null; horodatage: string;
+}
+export interface CiblageLocalite {
+  id_ligne: string; id_ciblage: string; identifiant_localite: string;
+  retenue: boolean; motif_exclusion: string | null;
+  score: number | null; population_eligible: number | null;
+  quota_score: number; quota_reserve: number; quota_total: number;
+}
+
+// ===================== SOURCES EXTERNES (CDC v3 §4) =====================
+export type ModeSource = "fichier" | "service" | "declaratif";
+export interface SourceExterne {
+  code: string; libelle: string; mode: ModeSource; delai_max_sec: number;
+  actif: boolean; champs: { champ: string; regle: string }[]; description: string | null;
+}
+
+// ===================== PROFIL D'USAGE (CDC v3 §3.4, base séparée) =====================
+export interface ProfilUsage {
+  id_profil: string; id_personne: string;
+  usage_principal: string | null; autre_texte: string | null;
+  horodatage: string; maj_le: string;
+}
+
 export interface Agent {
   id_agent: string;
   user_id: string | null;

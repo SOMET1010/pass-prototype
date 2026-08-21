@@ -1,7 +1,8 @@
 // Ponts vers le moteur d'éligibilité v3 (CDC v3) et le registre de paramètres.
 import { supabase } from "./supabase";
 import type {
-  ControleRegularite, EvaluationIndividuelle, Parametre, ScoreDimension, StatutRegularite,
+  CiblageGeo, CiblageLocalite, ControleRegularite, EvaluationIndividuelle, Localite,
+  ModeSource, Parametre, ProfilUsage, ScoreDimension, SourceExterne, StatutRegularite,
 } from "./types";
 
 /** Évalue une demande : régularité (bloquante) + score C1–C5 → rang P1–P4. */
@@ -39,6 +40,50 @@ export async function majParametre(cle: string, valeur: string, motif: string): 
   const { error } = await supabase.rpc("pass_param_maj", { p_cle: cle, p_valeur: valeur, p_motif: motif });
   if (error) throw error;
 }
+
+// ---------- Ciblage géographique (§2) ----------
+export const chargerLocalites = async (): Promise<Localite[]> =>
+  ((await supabase.from("localite").select("*").order("region")).data as Localite[]) ?? [];
+
+export const chargerCiblages = async (): Promise<CiblageGeo[]> =>
+  ((await supabase.from("ciblage_geo").select("*").order("horodatage", { ascending: false })).data as CiblageGeo[]) ?? [];
+
+export const chargerCiblageLocalites = async (idCiblage: string): Promise<CiblageLocalite[]> =>
+  ((await supabase.from("ciblage_localite").select("*").eq("id_ciblage", idCiblage)).data as CiblageLocalite[]) ?? [];
+
+export async function calculerCiblageGeo(idCampagne: string | null, volume: number): Promise<CiblageGeo> {
+  const { data, error } = await supabase.rpc("pass_calculer_ciblage_geo", { p_id_campagne: idCampagne, p_volume_total: volume });
+  if (error) throw error;
+  return (Array.isArray(data) ? data[0] : data) as CiblageGeo;
+}
+export async function arbitrerReserve(idCiblage: string, idLocalite: string, quantite: number, motif: string): Promise<void> {
+  const { error } = await supabase.rpc("pass_arbitrer_reserve", {
+    p_id_ciblage: idCiblage, p_identifiant_localite: idLocalite, p_quantite: quantite, p_motif: motif,
+  });
+  if (error) throw error;
+}
+
+// ---------- Sources externes (§4) ----------
+export const chargerSources = async (): Promise<SourceExterne[]> =>
+  ((await supabase.from("source_externe").select("*").order("code")).data as SourceExterne[]) ?? [];
+export async function majSource(code: string, mode: ModeSource, delai: number, actif: boolean): Promise<void> {
+  const { error } = await supabase.rpc("pass_source_maj", { p_code: code, p_mode: mode, p_delai_max_sec: delai, p_actif: actif });
+  if (error) throw error;
+}
+
+// ---------- Profil d'usage (§3.4, base séparée) ----------
+export async function lireProfilUsage(idPersonne: string): Promise<ProfilUsage | null> {
+  const { data } = await supabase.rpc("pass_profil_usage_lire", { p_id_personne: idPersonne });
+  const r = (Array.isArray(data) ? data[0] : data) as ProfilUsage | null;
+  return r ?? null;
+}
+export async function majProfilUsage(idPersonne: string, usage: string | null, autre: string | null): Promise<void> {
+  const { error } = await supabase.rpc("pass_profil_usage_maj", { p_id_personne: idPersonne, p_usage: usage, p_autre: autre });
+  if (error) throw error;
+}
+export const LIBELLE_MODE_SOURCE: Record<ModeSource, string> = {
+  fichier: "Fichier (import périodique)", service: "Service (temps réel)", declaratif: "Déclaratif (dégradé → à instruire)",
+};
 
 // ---------- Libellés v3 ----------
 export const LIBELLE_STATUT_REGULARITE: Record<StatutRegularite, string> = {

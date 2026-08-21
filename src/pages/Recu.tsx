@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 import { formatDate } from "../lib/rules";
 import { ParcoursStepper } from "../components/ParcoursStepper";
 import { CachetPanel } from "../components/CachetPanel";
+import { ProfilUsage } from "../components/ProfilUsage";
 import ansutLogo from "../assets/ansut-logo.svg";
 import type { Demande, Personne, Distribution, Terminal } from "../lib/types";
 
@@ -125,6 +126,9 @@ export function Recu() {
           </div>
         )}
       </div>
+
+      {/* Profil d'usage déclaratif — recueilli après l'attribution (base séparée, CDC v3 §3.4) */}
+      <ProfilUsage idPersonne={personne.id_personne} />
     </div>
   );
 }
