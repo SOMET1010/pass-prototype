@@ -2,7 +2,7 @@
 import { supabase } from "./supabase";
 import type {
   CiblageGeo, CiblageLocalite, ControleRegularite, EvaluationIndividuelle, Localite,
-  ModeSource, Parametre, ProfilUsage, ScoreDimension, SourceExterne, StatutRegularite,
+  ModeSource, Parametre, ProfilUsage, RangPriorite, ScoreDimension, SourceExterne, StatutRegularite,
 } from "./types";
 
 /** Évalue une demande : régularité (bloquante) + score C1–C5 → rang P1–P4. */
@@ -39,6 +39,21 @@ export async function chargerParametres(): Promise<Parametre[]> {
 export async function majParametre(cle: string, valeur: string, motif: string): Promise<void> {
   const { error } = await supabase.rpc("pass_param_maj", { p_cle: cle, p_valeur: valeur, p_motif: motif });
   if (error) throw error;
+}
+
+// ---------- Simulateur d'éligibilité (calcul pur, sans persistance) ----------
+export interface ResultatSimulation {
+  statut_regularite: StatutRegularite;
+  score: number | null;
+  rang: RangPriorite | null;
+  controles: Record<string, "concluant" | "non_concluant" | "indisponible">;
+  dimensions: { dimension: string; libelle: string; valeur: number; poids: number; contribution: number }[];
+  parametres: Record<string, string>;
+}
+export async function simulerEligibilite(input: Record<string, unknown>): Promise<ResultatSimulation> {
+  const { data, error } = await supabase.rpc("pass_simuler_eligibilite", { p_in: input });
+  if (error) throw error;
+  return data as ResultatSimulation;
 }
 
 // ---------- Ciblage géographique (§2) ----------

@@ -11,6 +11,7 @@ import { Stock } from "./pages/Stock";
 import { Logistique } from "./pages/Logistique";
 import { Parametres } from "./pages/Parametres";
 import { CiblageGeo } from "./pages/CiblageGeo";
+import { Simulateur } from "./pages/Simulateur";
 import { Sav } from "./pages/Sav";
 import { Verification } from "./pages/Verification";
 import { FicheDossier } from "./pages/FicheDossier";
@@ -48,6 +49,7 @@ export default function App() {
       <Route path="/logistique" element={<Protected><Logistique /></Protected>} />
       <Route path="/parametres" element={<Protected><Parametres /></Protected>} />
       <Route path="/ciblage-geo" element={<Protected><CiblageGeo /></Protected>} />
+      <Route path="/simulateur" element={<Protected><Simulateur /></Protected>} />
       <Route path="/sav" element={<Protected><Sav /></Protected>} />
       <Route path="/verification/:id" element={<Protected><Verification /></Protected>} />
       <Route path="/fiche/:id" element={<Protected><FicheDossier /></Protected>} />
