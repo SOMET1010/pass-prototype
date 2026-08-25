@@ -421,6 +421,26 @@ export interface StockLogistique {
   remis: number;
 }
 
+// ===================== DÉFENDABILITÉ (Architecture §3) =====================
+export interface DecisionSnapshot {
+  id_snapshot: string;
+  id_decision: string;
+  donnees: Record<string, unknown>;
+  empreinte: string;
+  horodatage: string;
+}
+export interface Annulation {
+  id_annulation: string;
+  cible_type: string;
+  id_cible: string;
+  motif: string;
+  autorisation: string;
+  snapshot: Record<string, unknown>;
+  empreinte: string;
+  id_agent: string;
+  horodatage: string;
+}
+
 export interface JournalAudit {
   id_evenement: string;
   acteur: string;

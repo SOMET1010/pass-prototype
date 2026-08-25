@@ -6,6 +6,7 @@ import { toast } from "../components/Toaster";
 import { SimuleBadge, ReelBadge, ResultatIcon, RecoBadge, EtatBadge } from "../components/Badges";
 import { ParcoursStepper } from "../components/ParcoursStepper";
 import { EvaluationV3 } from "../components/EvaluationV3";
+import { Defendabilite } from "../components/Defendabilite";
 import { pointRecommande } from "../lib/zones";
 import { marqueOperateur } from "../lib/operateurs";
 import { envoyerNotification } from "../lib/ansut";
@@ -267,6 +268,9 @@ export function Verification() {
 
       {/* Éligibilité v3 : régularité (bloquante) séparée du score C1–C5 → rang P1–P4 */}
       <EvaluationV3 idDemande={demande.id_demande} />
+
+      {/* Défendabilité : snapshot immuable + annulation compensatoire (Architecture §3) */}
+      <Defendabilite idDemande={demande.id_demande} />
 
       {/* En-tête dossier */}
       <div className="flex flex-wrap items-start justify-between gap-3">
