@@ -53,7 +53,7 @@ export function Simulateur() {
               {CONTROLES.map((c) => (
                 <label key={c} className="flex items-center justify-between gap-2 text-sm">
                   <span className="text-slate-600">{LIBELLE_CONTROLE[c]}</span>
-                  <select className={sel} value={f.controles[c]} onChange={(e) => setC(c, e.target.value)}>
+                  <select data-demo={`sim-ctrl-${c}`} className={sel} value={f.controles[c]} onChange={(e) => setC(c, e.target.value)}>
                     {RESULTATS.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </label>
@@ -65,7 +65,7 @@ export function Simulateur() {
             <div className="font-semibold text-sm">Signaux du score</div>
             <div className="grid grid-cols-3 gap-2 items-end">
               <label className="text-xs text-slate-500">Techno ligne
-                <select className={`${sel} w-full mt-1`} value={f.techno} onChange={(e) => setF((s) => ({ ...s, techno: e.target.value }))}>
+                <select data-demo="sim-techno" className={`${sel} w-full mt-1`} value={f.techno} onChange={(e) => setF((s) => ({ ...s, techno: e.target.value }))}>
                   <option>2G</option><option>3G</option><option>4G</option></select></label>
               <label className="text-xs text-slate-500">Dernière activité (j)
                 <input type="number" className={`${sel} w-full mt-1`} value={f.activite_jours} onChange={(e) => setF((s) => ({ ...s, activite_jours: Number(e.target.value) }))} /></label>
@@ -84,7 +84,7 @@ export function Simulateur() {
         </div>
 
         {/* Résultat */}
-        <div className="card p-5 space-y-4 self-start">
+        <div data-demo="sim-result" className="card p-5 space-y-4 self-start">
           <div className="font-semibold text-sm">Résultat de la simulation</div>
           {err && <div className="text-xs text-red-600">{err}</div>}
           {!res ? <div className="text-slate-400 text-sm">…</div> : (

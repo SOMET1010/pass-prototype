@@ -1,11 +1,22 @@
 // Scénario de la démonstration auto-jouée (mode « Démonstration »).
 // Chaque étape : une route, un titre, une narration (dite à voix haute + affichée),
-// et éventuellement un sélecteur d'élément à surligner.
+// éventuellement un sélecteur d'élément à surligner, et surtout des ACTIONS que
+// l'« agent » exécute réellement à l'écran (déplacement de curseur, ouverture de
+// menu, changement de valeur, clic) — pour montrer la plateforme en fonctionnement,
+// et pas seulement lire un texte.
+
+export type DemoAction =
+  | { type: "select"; selector: string; value: string; note?: string }
+  | { type: "click"; selector: string; note?: string }
+  | { type: "type"; selector: string; value: string; note?: string }
+  | { type: "wait"; ms: number };
+
 export interface EtapeDemo {
   route: string;
   titre: string;
   texte: string;
   highlight?: string;
+  actions?: DemoAction[];
 }
 
 export function construireScenario(idDemande: string | null): EtapeDemo[] {
@@ -29,17 +40,35 @@ export function construireScenario(idDemande: string | null): EtapeDemo[] {
       route: routeDossier,
       titre: "Éligibilité v3 & défendabilité",
       texte:
-        "La vérification d'éligibilité. Les contrôles de régularité, bloquants, sont séparés du score sur cinq " +
-        "dimensions, qui produit un rang de priorité de P1 à P4. Chaque décision est figée dans un cachet " +
-        "reproductible : elle reste défendable des mois plus tard.",
+        "La vérification d'éligibilité. Je relance le moteur : les contrôles de régularité, bloquants, sont " +
+        "séparés du score sur cinq dimensions, qui produit un rang de priorité de P1 à P4. Chaque décision " +
+        "est figée dans un cachet reproductible : elle reste défendable des mois plus tard.",
       highlight: "#demo-eval",
+      actions: idDemande
+        ? [
+            { type: "wait", ms: 600 },
+            { type: "click", selector: '[data-demo="eval-run"]', note: "Relance du moteur d'éligibilité" },
+            { type: "wait", ms: 2600 },
+          ]
+        : undefined,
     },
     {
       route: "/simulateur",
-      titre: "Simulateur d'éligibilité",
+      titre: "Simulateur — je manipule les contrôles",
       texte:
-        "Le simulateur permet de tester une situation sans créer de dossier. Le rang se recalcule en direct, " +
-        "selon les paramètres en vigueur : idéal pour la formation et pour mesurer l'effet d'un réglage.",
+        "Regardez : je bascule le contrôle « ligne mobile » sur non concluant — le verdict passe aussitôt à refus. " +
+        "Je le rétablis, la demande redevient recevable avec son rang. Puis je change la techno de la ligne : " +
+        "le score et le rang se recalculent en direct. Un refus vient toujours d'un contrôle, jamais d'un score faible.",
+      highlight: '[data-demo="sim-result"]',
+      actions: [
+        { type: "wait", ms: 700 },
+        { type: "select", selector: '[data-demo="sim-ctrl-ligne_mobile"]', value: "non_concluant", note: "Ligne mobile → non concluant" },
+        { type: "wait", ms: 1900 },
+        { type: "select", selector: '[data-demo="sim-ctrl-ligne_mobile"]', value: "concluant", note: "Ligne mobile → concluant" },
+        { type: "wait", ms: 1500 },
+        { type: "select", selector: '[data-demo="sim-techno"]', value: "2G", note: "Techno ligne → 2G" },
+        { type: "wait", ms: 1800 },
+      ],
     },
     {
       route: "/parametres",

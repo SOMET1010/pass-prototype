@@ -60,7 +60,7 @@ export function EvaluationV3({ idDemande, canEvaluer = true }: { idDemande: stri
         <div className="flex items-center gap-2">
           {ev && <SimuleBadge />}
           {canEvaluer && (
-            <button onClick={evaluer} disabled={busy} className="btn-primary text-sm">
+            <button data-demo="eval-run" onClick={evaluer} disabled={busy} className="btn-primary text-sm">
               {busy ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
               {ev ? "Réévaluer" : "Évaluer"}
             </button>
