@@ -1,7 +1,8 @@
 # Edge Functions — Intégrations institutionnelles ANSUT
 
-Deux passerelles déjà en service sur d'autres projets ANSUT, raccordées au
-prototype PASS (Programme d'Accès aux Smartphones Subventionnés).
+Deux passerelles déjà en service sur d'autres projets ANSUT et un service de
+narration GPT sont raccordés au prototype PASS (Programme d'Accès aux
+Smartphones Subventionnés).
 
 Chaîne d'appel réelle dans les deux cas ; bascule automatique en **mode simulé**
 tant que les secrets ne sont pas fournis (le parcours n'est jamais bloqué).
@@ -48,9 +49,32 @@ Secrets :
 > reference }` : à ajuster au format réel le jour du raccordement. L'empreinte,
 > elle, est déjà calculée et immuable.
 
+## `gpt-voice` — narration de la démonstration
+
+Génère les dix commentaires du parcours guidé avec OpenAI
+`gpt-4o-mini-tts`. La fonction n'accepte que les narrations figées du scénario :
+elle ne peut pas être détournée en service TTS général malgré les comptes de
+démonstration publics. Si la fonction ou OpenAI est indisponible, le frontend
+reprend automatiquement la voix française du navigateur.
+
+Azure OpenAI est utilisé en priorité lorsque les secrets Azure sont présents.
+OpenAI direct reste disponible comme solution secondaire.
+
+| Secret | Rôle |
+| --- | --- |
+| `AZURE_OPENAI_ENDPOINT` | Endpoint Azure OpenAI, sans chemin API |
+| `AZURE_OPENAI_API_KEY` | Clé Azure OpenAI, conservée exclusivement dans Supabase |
+| `AZURE_OPENAI_TTS_DEPLOYMENT` | (option) déploiement audio ; défaut : `gpt-4o-mini-tts` |
+| `OPENAI_API_KEY` | (secours) clé OpenAI directe si Azure n'est pas configuré |
+| `OPENAI_TTS_VOICE` | (option) voix OpenAI ; valeur par défaut : `marin` |
+
+Le bandeau indique explicitement « Voix GPT · générée par IA » lorsque la voix
+OpenAI est active, ou « Voix navigateur · secours » en mode dégradé.
+
 ## Déploiement
 
 ```bash
 supabase functions deploy ansut-hub
 supabase functions deploy ansut-cachet
+supabase functions deploy gpt-voice
 ```
