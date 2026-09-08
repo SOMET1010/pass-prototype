@@ -15,8 +15,10 @@ import {
   Info,
   LogOut,
   ShieldAlert,
+  PlayCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { lancerDemo } from "./DemoTour";
 import { LIBELLE_ROLE } from "../lib/rules";
 import ansutLogo from "../assets/ansut-logo.svg";
 
@@ -102,6 +104,15 @@ export function Layout({ children }: { children: ReactNode }) {
       </header>
 
       <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">{children}</main>
+
+      {/* Bouton flottant — lance la démonstration guidée auto-jouée */}
+      <button
+        onClick={() => lancerDemo()}
+        className="no-print fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-pass-orange text-white font-semibold px-4 py-2.5 shadow-lg hover:bg-pass-orange/90"
+        title="Lancer la démonstration guidée"
+      >
+        <PlayCircle size={18} /> Démonstration
+      </button>
 
       <footer className="no-print border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400">
         Prototype PASS · ANSUT — Programme d'Accès aux Smartphones Subventionnés · Données fictives

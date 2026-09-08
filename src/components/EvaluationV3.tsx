@@ -45,7 +45,7 @@ export function EvaluationV3({ idDemande, canEvaluer = true }: { idDemande: stri
   const total = dims.reduce((n, d) => n + Number(d.contribution), 0);
 
   return (
-    <div className="card p-5 space-y-4">
+    <div id="demo-eval" className="card p-5 space-y-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-base font-semibold flex items-center gap-2">

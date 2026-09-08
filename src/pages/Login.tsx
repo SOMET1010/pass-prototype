@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, PlayCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { lancerDemo } from "../components/DemoTour";
 import ansutLogo from "../assets/ansut-logo.svg";
 
 const COMPTES_DEMO = [
@@ -79,6 +80,13 @@ export function Login() {
             )}
             <button type="submit" className="btn-primary w-full" disabled={busy}>
               {busy ? "Connexion…" : "Se connecter"}
+            </button>
+            <button
+              type="button"
+              onClick={() => lancerDemo()}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-pass-orange/50 bg-pass-orange-light text-pass-orange font-semibold py-2.5 text-sm hover:bg-pass-orange hover:text-white transition-colors"
+            >
+              <PlayCircle size={17} /> Démonstration guidée (auto)
             </button>
           </form>
 
