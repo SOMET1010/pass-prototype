@@ -1,51 +1,37 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import type { ReactNode } from "react";
-import {
-  LayoutDashboard,
-  UserPlus,
-  FolderKanban,
-  Gavel,
-  Search,
-  Warehouse,
-  Truck,
-  Map,
-  FlaskConical,
-  Wrench,
-  SlidersHorizontal,
-  Info,
-  LogOut,
-  ShieldAlert,
-  PlayCircle,
-} from "lucide-react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { LogOut, ShieldAlert, PlayCircle, ChevronDown } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { lancerDemo } from "./DemoTour";
+import { Breadcrumb } from "./Breadcrumb";
+import { NAV_GROUPS, groupeDe } from "../lib/navigation";
 import { LIBELLE_ROLE } from "../lib/rules";
 import ansutLogo from "../assets/ansut-logo.svg";
-
-const NAV = [
-  { to: "/", label: "Accueil", icon: LayoutDashboard, end: true },
-  { to: "/enrolement", label: "Enrôlement", icon: UserPlus },
-  { to: "/dossiers", label: "Dossiers", icon: FolderKanban },
-  { to: "/instruction", label: "Instruction", icon: Gavel },
-  { to: "/recherche", label: "Recherche", icon: Search },
-  { to: "/stock", label: "Stock", icon: Warehouse },
-  { to: "/logistique", label: "Logistique", icon: Truck },
-  { to: "/sav", label: "SAV", icon: Wrench },
-  { to: "/ciblage-geo", label: "Ciblage géo.", icon: Map },
-  { to: "/simulateur", label: "Simulateur", icon: FlaskConical },
-  { to: "/supervision", label: "Supervision", icon: LayoutDashboard },
-  { to: "/parametres", label: "Paramètres", icon: SlidersHorizontal },
-  { to: "/a-propos", label: "À propos", icon: Info },
-];
 
 export function Layout({ children }: { children: ReactNode }) {
   const { agent, signOut } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const groupeActif = groupeDe(pathname);
 
   async function handleLogout() {
     await signOut();
     navigate("/login");
   }
+
+  // Ferme le menu déroulant lors d'un changement de page ou d'un clic extérieur.
+  useEffect(() => { setOpenGroup(null); }, [pathname]);
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) setOpenGroup(null);
+    }
+    function onEsc(e: KeyboardEvent) { if (e.key === "Escape") setOpenGroup(null); }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onEsc); };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -82,28 +68,58 @@ export function Layout({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* Navigation */}
-        <nav className="mx-auto max-w-6xl px-2 flex gap-1 overflow-x-auto">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `flex items-center gap-2 whitespace-nowrap px-3 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                  isActive
-                    ? "border-pass-blue text-pass-blue"
-                    : "border-transparent text-slate-500 hover:text-pass-blue hover:border-slate-300"
-                }`
-              }
-            >
-              <item.icon size={16} /> {item.label}
-            </NavLink>
-          ))}
+        {/* Navigation groupée (menus déroulants) */}
+        <nav ref={navRef} className="mx-auto max-w-6xl px-2 flex gap-1 relative">
+          {NAV_GROUPS.map((g) => {
+            const actif = groupeActif === g.label;
+            const ouvert = openGroup === g.label;
+            return (
+              <div key={g.label} className="relative">
+                <button
+                  onClick={() => setOpenGroup((o) => (o === g.label ? null : g.label))}
+                  aria-expanded={ouvert}
+                  aria-haspopup="true"
+                  className={`flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                    actif
+                      ? "border-pass-blue text-pass-blue"
+                      : "border-transparent text-slate-500 hover:text-pass-blue hover:border-slate-300"
+                  }`}
+                >
+                  {g.label}
+                  <ChevronDown size={14} className={`transition-transform ${ouvert ? "rotate-180" : ""}`} />
+                </button>
+
+                {ouvert && (
+                  <div className="absolute left-0 top-full z-50 mt-0.5 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                    {g.items.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.end}
+                        onClick={() => setOpenGroup(null)}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                            isActive
+                              ? "bg-pass-blue-light text-pass-blue"
+                              : "text-slate-600 hover:bg-slate-50 hover:text-pass-blue"
+                          }`
+                        }
+                      >
+                        <item.icon size={16} className="shrink-0" /> {item.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
       </header>
 
-      <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">{children}</main>
+      <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">
+        <Breadcrumb />
+        {children}
+      </main>
 
       {/* Bouton flottant — lance la démonstration guidée auto-jouée */}
       <button

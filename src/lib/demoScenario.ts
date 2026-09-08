@@ -23,20 +23,24 @@ export interface EtapeDemo {
 export function construireScenario(idDemande: string | null): EtapeDemo[] {
   const routeDossier = idDemande ? `/verification/${idDemande}` : "/dossiers";
   return [
+    // ————— Accueil —————
     {
       route: "/",
       titre: "Accueil — pilotage du programme",
       texte:
         "Bienvenue sur la plateforme PASS, le Programme d'Accès aux Smartphones Subventionnés de l'ANSUT. " +
-        "Voici le tableau de bord : la mission, les indicateurs du jour et le parcours du bénéficiaire.",
+        "La navigation suit quatre grands moments : le Quotidien du terrain, la Distribution, la Gouvernance, " +
+        "et l'Aide. Nous allons les parcourir dans cet ordre. Voici d'abord le tableau de bord.",
     },
+
+    // ————— 1. QUOTIDIEN : le parcours d'un bénéficiaire —————
     {
       route: "/enrolement",
-      titre: "Enrôlement assisté — saisie & lecture de pièce",
+      titre: "Quotidien · Enrôlement assisté",
       texte:
-        "Première étape : l'enrôlement. Je commence par saisir manuellement le nom et les prénoms du bénéficiaire. " +
-        "Puis, plutôt que tout retaper, l'agent lit la pièce d'identité : la reconnaissance automatique pré-remplit " +
-        "le numéro, la date de naissance et la zone en une seconde. Le chronomètre vise moins d'une minute.",
+        "Commençons par le Quotidien du terrain. Première étape : l'enrôlement. Je saisis manuellement le nom et " +
+        "les prénoms, puis, plutôt que tout retaper, l'agent lit la pièce d'identité : la reconnaissance automatique " +
+        "pré-remplit le numéro, la date de naissance et la zone en une seconde. Le chronomètre vise moins d'une minute.",
       actions: [
         { type: "wait", ms: 500 },
         { type: "type", selector: '[data-demo="enr-nom"]', value: "DIALLO", note: "Saisie manuelle — Nom" },
@@ -48,11 +52,11 @@ export function construireScenario(idDemande: string | null): EtapeDemo[] {
     },
     {
       route: routeDossier,
-      titre: "Éligibilité v3 & défendabilité",
+      titre: "Quotidien · Éligibilité v3 & défendabilité",
       texte:
-        "La vérification d'éligibilité. Je relance le moteur : les contrôles de régularité, bloquants, sont " +
-        "séparés du score sur cinq dimensions, qui produit un rang de priorité de P1 à P4. Chaque décision " +
-        "est figée dans un cachet reproductible : elle reste défendable des mois plus tard.",
+        "Toujours dans le Quotidien : la vérification d'éligibilité du dossier. Je relance le moteur — les contrôles " +
+        "de régularité, bloquants, sont séparés du score sur cinq dimensions, qui produit un rang de priorité de P1 " +
+        "à P4. Chaque décision est figée dans un cachet reproductible : elle reste défendable des mois plus tard.",
       highlight: "#demo-eval",
       actions: idDemande
         ? [
@@ -62,13 +66,63 @@ export function construireScenario(idDemande: string | null): EtapeDemo[] {
           ]
         : undefined,
     },
+
+    // ————— 2. DISTRIBUTION : la logistique physique —————
+    {
+      route: "/logistique",
+      titre: "Distribution · Logistique de bout en bout",
+      texte:
+        "Passons à la Distribution. La chaîne logistique complète : de la commande au fournisseur jusqu'à la mission " +
+        "de terrain, en passant par la réception, l'entrepôt et les points mobiles — chaque terminal étant tracé par son IMEI.",
+    },
+    {
+      route: "/stock",
+      titre: "Distribution · Stock & points de retrait",
+      texte:
+        "Toujours côté Distribution : la cartographie des points de retrait et l'état des stocks par centre, " +
+        "avec les seuils d'alerte de réapprovisionnement.",
+    },
+
+    // ————— 3. GOUVERNANCE : règles, ciblage, pilotage —————
+    {
+      route: "/ciblage-geo",
+      titre: "Gouvernance · Ciblage géographique",
+      texte:
+        "Voici la Gouvernance du programme. Le ciblage traite une campagne entière : je fixe le volume de terminaux, " +
+        "puis je lance le calcul. Les trois filtres s'appliquent, le score priorise, les quotas se répartissent — " +
+        "les localités rurales défavorisées remontent, la population éligible étant population fois taux de pauvreté, " +
+        "avec une réserve d'arbitrage toujours motivée.",
+      highlight: '[data-demo="geo-result"]',
+      actions: [
+        { type: "wait", ms: 600 },
+        { type: "fill", selector: '[data-demo="geo-volume"]', value: "5000", note: "Volume → 5 000 terminaux" },
+        { type: "wait", ms: 700 },
+        { type: "click", selector: '[data-demo="geo-run"]', note: "Calculer le ciblage" },
+        { type: "wait", ms: 3000 },
+      ],
+    },
+    {
+      route: "/parametres",
+      titre: "Gouvernance · Paramètres administrables",
+      texte:
+        "Les règles derrière tout cela sont administrables : rien n'est codé en dur. Je modifie par exemple le poids " +
+        "du critère C1 et je saisis le motif — chaque changement est horodaté, attribué et versionné, l'ancienne " +
+        "valeur restant archivée. Les modes d'accès aux registres nationaux sont aussi configurables, source par source.",
+      actions: [
+        { type: "wait", ms: 600 },
+        { type: "type", selector: '[data-demo="param-input-score_c1_poids"]', value: "35", note: "Poids C1 → 35" },
+        { type: "type", selector: '[data-demo="param-motif-score_c1_poids"]', value: "Révision pondération (revue gouvernance)", note: "Motif obligatoire" },
+        { type: "wait", ms: 1400 },
+      ],
+    },
     {
       route: "/simulateur",
-      titre: "Simulateur — je manipule les contrôles",
+      titre: "Gouvernance · Simulateur d'éligibilité",
       texte:
-        "Regardez : je bascule le contrôle « ligne mobile » sur non concluant — le verdict passe aussitôt à refus. " +
-        "Je le rétablis, la demande redevient recevable avec son rang. Puis je change la techno de la ligne : " +
-        "le score et le rang se recalculent en direct. Un refus vient toujours d'un contrôle, jamais d'un score faible.",
+        "Le simulateur permet d'éprouver ces règles sans créer de dossier. Regardez : je bascule le contrôle « ligne " +
+        "mobile » sur non concluant — le verdict passe aussitôt à refus. Je le rétablis, la demande redevient recevable. " +
+        "Puis je change la techno de la ligne : le score et le rang se recalculent en direct. Un refus vient toujours " +
+        "d'un contrôle, jamais d'un score faible.",
       highlight: '[data-demo="sim-result"]',
       actions: [
         { type: "wait", ms: 700 },
@@ -81,61 +135,20 @@ export function construireScenario(idDemande: string | null): EtapeDemo[] {
       ],
     },
     {
-      route: "/parametres",
-      titre: "Paramètres administrables & versionnés",
-      texte:
-        "Ici, rien n'est codé en dur. Je modifie par exemple le poids du critère C1, et je saisis le motif : " +
-        "chaque changement est horodaté, attribué et versionné, l'ancienne valeur restant archivée. " +
-        "Les modes d'accès aux registres nationaux sont également configurables, source par source.",
-      actions: [
-        { type: "wait", ms: 600 },
-        { type: "type", selector: '[data-demo="param-input-score_c1_poids"]', value: "35", note: "Poids C1 → 35" },
-        { type: "type", selector: '[data-demo="param-motif-score_c1_poids"]', value: "Révision pondération (revue gouvernance)", note: "Motif obligatoire" },
-        { type: "wait", ms: 1400 },
-      ],
-    },
-    {
-      route: "/ciblage-geo",
-      titre: "Ciblage géographique — je lance le calcul",
-      texte:
-        "Le ciblage traite une campagne entière. Je fixe le volume de terminaux, puis je lance le calcul : " +
-        "les trois filtres éliminatoires s'appliquent, le score priorise, et les quotas se répartissent. " +
-        "Les localités rurales défavorisées remontent — la population éligible étant population fois taux de pauvreté — " +
-        "avec une réserve d'arbitrage toujours motivée.",
-      highlight: '[data-demo="geo-result"]',
-      actions: [
-        { type: "wait", ms: 600 },
-        { type: "fill", selector: '[data-demo="geo-volume"]', value: "5000", note: "Volume → 5 000 terminaux" },
-        { type: "wait", ms: 700 },
-        { type: "click", selector: '[data-demo="geo-run"]', note: "Calculer le ciblage" },
-        { type: "wait", ms: 3000 },
-      ],
-    },
-    {
-      route: "/logistique",
-      titre: "Logistique de bout en bout",
-      texte:
-        "La chaîne logistique complète : de la commande au fournisseur jusqu'à la mission de terrain, " +
-        "en passant par la réception, l'entrepôt et les points mobiles — chaque terminal étant tracé par son IMEI.",
-    },
-    {
-      route: "/stock",
-      titre: "Stock & points de retrait",
-      texte:
-        "La cartographie des points de retrait et l'état des stocks par centre, avec les seuils d'alerte de réapprovisionnement.",
-    },
-    {
       route: "/supervision",
-      titre: "Supervision & conformité",
+      titre: "Gouvernance · Supervision & conformité",
       texte:
-        "La supervision suit les délais de service, un journal d'audit inaltérable et la conformité du programme.",
+        "Pour clore la Gouvernance : la supervision suit les délais de service, un journal d'audit inaltérable et " +
+        "la conformité du programme.",
     },
+
+    // ————— 4. AIDE : conclusion —————
     {
       route: "/a-propos",
-      titre: "Conclusion",
+      titre: "Aide · Conclusion",
       texte:
-        "Voilà la plateforme PASS : un parcours vérifié, prouvé et inclusif, du bénéficiaire jusqu'à la preuve de remise. " +
-        "Merci de votre attention.",
+        "Voilà la plateforme PASS, parcourue dans son ordre logique : Quotidien, Distribution, Gouvernance. " +
+        "Un parcours vérifié, prouvé et inclusif, du bénéficiaire jusqu'à la preuve de remise. Merci de votre attention.",
     },
   ];
 }
