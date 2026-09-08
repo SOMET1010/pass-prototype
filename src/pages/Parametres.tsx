@@ -87,6 +87,7 @@ export function Parametres() {
                 </div>
                 <div className="flex items-center gap-2">
                   <input
+                    data-demo={`param-input-${p.cle}`}
                     className={inputCls}
                     value={edit[p.cle] ?? ""}
                     disabled={!superviseur}
@@ -95,6 +96,7 @@ export function Parametres() {
                   {superviseur && (
                     <>
                       <input
+                        data-demo={`param-motif-${p.cle}`}
                         className="w-40 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs"
                         placeholder="Motif"
                         value={motif[p.cle] ?? ""}

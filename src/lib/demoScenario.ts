@@ -82,17 +82,34 @@ export function construireScenario(idDemande: string | null): EtapeDemo[] {
     },
     {
       route: "/parametres",
-      titre: "Paramètres administrables",
+      titre: "Paramètres administrables & versionnés",
       texte:
-        "Ici, les poids et les seuils sont administrables, versionnés et horodatés : rien n'est codé en dur. " +
+        "Ici, rien n'est codé en dur. Je modifie par exemple le poids du critère C1, et je saisis le motif : " +
+        "chaque changement est horodaté, attribué et versionné, l'ancienne valeur restant archivée. " +
         "Les modes d'accès aux registres nationaux sont également configurables, source par source.",
+      actions: [
+        { type: "wait", ms: 600 },
+        { type: "type", selector: '[data-demo="param-input-score_c1_poids"]', value: "35", note: "Poids C1 → 35" },
+        { type: "type", selector: '[data-demo="param-motif-score_c1_poids"]', value: "Révision pondération (revue gouvernance)", note: "Motif obligatoire" },
+        { type: "wait", ms: 1400 },
+      ],
     },
     {
       route: "/ciblage-geo",
-      titre: "Ciblage géographique",
+      titre: "Ciblage géographique — je lance le calcul",
       texte:
-        "Le ciblage géographique applique trois filtres, un score de priorisation, puis répartit les quotas. " +
-        "Les localités rurales défavorisées sont priorisées, avec une réserve d'arbitrage toujours motivée et tracée.",
+        "Le ciblage traite une campagne entière. Je fixe le volume de terminaux, puis je lance le calcul : " +
+        "les trois filtres éliminatoires s'appliquent, le score priorise, et les quotas se répartissent. " +
+        "Les localités rurales défavorisées remontent — la population éligible étant population fois taux de pauvreté — " +
+        "avec une réserve d'arbitrage toujours motivée.",
+      highlight: '[data-demo="geo-result"]',
+      actions: [
+        { type: "wait", ms: 600 },
+        { type: "fill", selector: '[data-demo="geo-volume"]', value: "5000", note: "Volume → 5 000 terminaux" },
+        { type: "wait", ms: 700 },
+        { type: "click", selector: '[data-demo="geo-run"]', note: "Calculer le ciblage" },
+        { type: "wait", ms: 3000 },
+      ],
     },
     {
       route: "/logistique",

@@ -91,9 +91,9 @@ export function CiblageGeo() {
               </div>
               <div>
                 <label className="text-xs text-slate-500">Volume de la campagne (terminaux)</label>
-                <input type="number" className={inputCls} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
+                <input data-demo="geo-volume" type="number" className={inputCls} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
               </div>
-              <button className="btn-primary w-full" onClick={lancer} disabled={busy}>
+              <button data-demo="geo-run" className="btn-primary w-full" onClick={lancer} disabled={busy}>
                 {busy ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />} Calculer le ciblage
               </button>
             </div>
@@ -141,7 +141,7 @@ export function CiblageGeo() {
         </div>
 
         {/* Résultats */}
-        <div className="lg:col-span-2 space-y-4">
+        <div data-demo="geo-result" className="lg:col-span-2 space-y-4">
           {!run ? <div className="card p-5 text-slate-400 text-sm">Lancez ou sélectionnez un ciblage.</div> : (
             <>
               <div className="card p-5">
