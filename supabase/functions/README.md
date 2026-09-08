@@ -65,12 +65,20 @@ Secrets :
 
 | Secret | Rôle |
 | --- | --- |
-| `AZURE_OPENAI_TTS_KEY` | **Requis** — clé API Azure OpenAI (à poser dès réception) |
-| `AZURE_OPENAI_TTS_ENDPOINT` | (option) défaut `https://dtdi-openai-audio-02.openai.azure.com/` |
+| `AZURE_OPENAI_TTS_KEY` | **Requis** — clé API Azure OpenAI. Alias accepté : `AZURE_OPENAI_API_KEY` |
+| `AZURE_OPENAI_TTS_ENDPOINT` | (option) défaut `https://dtdi-openai-audio-02.openai.azure.com/` (ressource où vit le déploiement) |
 | `AZURE_OPENAI_TTS_DEPLOYMENT` | (option) défaut `gpt-4o-mini-tts` |
 | `AZURE_OPENAI_TTS_API_VERSION` | (option) défaut `2025-03-01-preview` |
 | `AZURE_OPENAI_TTS_VOICE` | (option) défaut `alloy` (autres : `sage`, `nova`, `coral`, `echo`, `shimmer`…) |
 | `AZURE_OPENAI_TTS_INSTRUCTIONS` | (option) ton de la narration |
+
+> Le secret **générique** `AZURE_OPENAI_ENDPOINT` n'est **pas** lu pour l'endpoint :
+> il peut pointer une autre ressource que celle de la clé (source d'un 401
+> « invalid subscription key or wrong API endpoint »). Pour surcharger l'endpoint,
+> utiliser le secret **dédié** `AZURE_OPENAI_TTS_ENDPOINT`.
+>
+> Intégration validée le 08/09/2026 : génération MP3 réelle (gpt-4o-mini-tts,
+> ressource audio-02) — HTTP 200, `audio/mpeg`.
 
 > **Activation** : la seule action requise le jour du raccordement est de poser
 > le secret `AZURE_OPENAI_TTS_KEY` (Project Settings → Edge Functions → Secrets,

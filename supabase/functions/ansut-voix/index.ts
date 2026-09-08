@@ -10,8 +10,8 @@
 // Accès réservé à un agent authentifié (JWT valide) — évite tout abus de coût.
 //
 // Secrets attendus (Project Settings → Edge Functions → Secrets) :
-//   AZURE_OPENAI_TTS_KEY          (requis — la clé API Azure)
-//   AZURE_OPENAI_TTS_ENDPOINT     (option — défaut : ressource DTDI ci-dessous)
+//   AZURE_OPENAI_TTS_KEY          (requis — la clé API Azure ; alias : AZURE_OPENAI_API_KEY)
+//   AZURE_OPENAI_TTS_ENDPOINT     (option — défaut : ressource DTDI ; alias : AZURE_OPENAI_ENDPOINT)
 //   AZURE_OPENAI_TTS_DEPLOYMENT   (option — défaut : gpt-4o-mini-tts)
 //   AZURE_OPENAI_TTS_API_VERSION  (option — défaut : 2025-03-01-preview)
 //   AZURE_OPENAI_TTS_VOICE        (option — défaut : alloy)
@@ -53,12 +53,16 @@ Deno.serve(async (req) => {
     const { data: userData, error: authErr } = await asAgent.auth.getUser();
     if (authErr || !userData?.user) return json({ error: "Accès refusé : agent non authentifié." }, 401);
 
-    const key = Deno.env.get("AZURE_OPENAI_TTS_KEY");
+    // Accepte les deux conventions de nommage du secret (TTS dédié ou générique Azure OpenAI).
+    const key = Deno.env.get("AZURE_OPENAI_TTS_KEY") ?? Deno.env.get("AZURE_OPENAI_API_KEY");
     if (!key) {
       // Non configuré → repli navigateur côté frontend (pas une erreur).
       return json({ configured: false, detail: "Clé Azure OpenAI TTS non fournie sur cet environnement." });
     }
 
+    // Endpoint : secret dédié TTS en priorité, sinon la ressource DTDI de référence
+    // (audio-02, où vit le déploiement). On n'utilise PAS le secret générique
+    // AZURE_OPENAI_ENDPOINT : il peut pointer une autre ressource que la clé.
     const endpoint = (Deno.env.get("AZURE_OPENAI_TTS_ENDPOINT") ?? DEFAULT_ENDPOINT).replace(/\/+$/, "");
     const deployment = Deno.env.get("AZURE_OPENAI_TTS_DEPLOYMENT") ?? DEFAULT_DEPLOYMENT;
     const apiVersion = Deno.env.get("AZURE_OPENAI_TTS_API_VERSION") ?? DEFAULT_API_VERSION;
