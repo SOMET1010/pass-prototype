@@ -138,7 +138,7 @@ export function DemoTour() {
           for (let i = 1; i <= a.value.length; i++) {
             if (token !== tokenRef.current) return;
             setReactValue(input, a.value.slice(0, i));
-            await sleep(60); // frappe caractère par caractère
+            await sleep(35); // frappe caractère par caractère
           }
         }
       }
