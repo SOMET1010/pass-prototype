@@ -175,6 +175,9 @@ Principes structurants (à préserver) :
 
 ## 11. Documents de référence (dossier `docs/`)
 - `PASS_CDC_Eligibilite_v3.pdf` / `.docx` — cahier des charges éligibilité v3.
+- `PASS_CDC_Interfaces_Identite_v4.docx` — interfaces registres d'identité (RNPP/CMU/RSU), pour concertation.
+- `PASS_Note_Identite_Cas_Complexes_v2.docx` — cas complexes d'identité, institution par institution.
+- `CADRAGE_INTERFACES_IDENTITE.md` — note de cadrage (écart prototype ↔ interfaces identité, recommandations d'implémentation).
 - `Architecture_PASS_ANSUT.pdf` — architecture cible Azure.
 - `CONFORMITE_ARCHITECTURE.md` — mapping exigences ↔ implémentation.
 - `PASS_Presentation_Conseil_Administration.pptx` + `PASS_texte_presentation.txt` — support CA.
