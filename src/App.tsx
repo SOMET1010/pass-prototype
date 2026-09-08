@@ -21,6 +21,7 @@ import { Remise } from "./pages/Remise";
 import { Recu } from "./pages/Recu";
 import { Supervision } from "./pages/Supervision";
 import { APropos } from "./pages/APropos";
+import { ComparateurVoix } from "./pages/ComparateurVoix";
 import { DemoTour } from "./components/DemoTour";
 
 function Protected({ children }: { children: JSX.Element }) {
@@ -61,6 +62,7 @@ export default function App() {
       <Route path="/recu/:id" element={<Protected><Recu /></Protected>} />
       <Route path="/supervision" element={<Protected><Supervision /></Protected>} />
       <Route path="/a-propos" element={<Protected><APropos /></Protected>} />
+      <Route path="/comparateur-voix" element={<Protected><ComparateurVoix /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     <DemoTour />

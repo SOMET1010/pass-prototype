@@ -88,6 +88,16 @@ Deno.serve(async (req) => {
     }
 
     const audio = await res.arrayBuffer();
+
+    // Option { format:"base64" } : renvoie l'audio encodé en JSON (utile pour les
+    // clients qui ne peuvent pas manipuler un flux binaire). Défaut = binaire.
+    if (String(body?.format ?? "") === "base64") {
+      let bin = "";
+      const bytes = new Uint8Array(audio);
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return json({ voix, octets: bytes.length, audio_base64: btoa(bin) });
+    }
+
     return new Response(audio, {
       status: 200,
       headers: {
