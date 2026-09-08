@@ -69,20 +69,31 @@ Deno.serve(async (req) => {
       return json({ error: "Narration non autorisée" }, 400);
     }
 
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
-    if (!apiKey) {
+    const azureEndpoint = Deno.env.get("AZURE_OPENAI_ENDPOINT")?.replace(/\/+$/, "");
+    const azureApiKey = Deno.env.get("AZURE_OPENAI_API_KEY");
+    const openAiApiKey = Deno.env.get("OPENAI_API_KEY");
+    if ((!azureEndpoint || !azureApiKey) && !openAiApiKey) {
       return json({ error: "Voix GPT non configurée", fallback: "browser" }, 503);
     }
 
     const voice = Deno.env.get("OPENAI_TTS_VOICE") || "marin";
-    const response = await fetch("https://api.openai.com/v1/audio/speech", {
+    const model = azureEndpoint && azureApiKey
+      ? Deno.env.get("AZURE_OPENAI_TTS_DEPLOYMENT") || "gpt-4o-mini-tts"
+      : "gpt-4o-mini-tts";
+    const provider = azureEndpoint && azureApiKey ? "azure-openai" : "openai";
+    const speechUrl = provider === "azure-openai"
+      ? `${azureEndpoint}/openai/v1/audio/speech?api-version=preview`
+      : "https://api.openai.com/v1/audio/speech";
+    const response = await fetch(speechUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        ...(provider === "azure-openai"
+          ? { "api-key": azureApiKey! }
+          : { Authorization: `Bearer ${openAiApiKey!}` }),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini-tts",
+        model,
         voice,
         input: text,
         instructions:
@@ -93,7 +104,7 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 300);
-      console.error(`OpenAI TTS ${response.status}: ${detail}`);
+      console.error(`${provider} TTS ${response.status}: ${detail}`);
       return json({ error: "Génération vocale indisponible", fallback: "browser" }, 502);
     }
 
@@ -101,7 +112,8 @@ Deno.serve(async (req) => {
     return json({
       audio_base64: toBase64(audio),
       media_type: "audio/mpeg",
-      provider: "openai",
+      provider,
+      model,
       voice,
       ai_generated: true,
     });
