@@ -8,7 +8,8 @@
 export type DemoAction =
   | { type: "select"; selector: string; value: string; note?: string }
   | { type: "click"; selector: string; note?: string }
-  | { type: "type"; selector: string; value: string; note?: string }
+  | { type: "type"; selector: string; value: string; note?: string }   // saisie caractère par caractère (animée)
+  | { type: "fill"; selector: string; value: string; note?: string }   // valeur posée d'un coup (dates, nombres)
   | { type: "wait"; ms: number };
 
 export interface EtapeDemo {
@@ -31,10 +32,20 @@ export function construireScenario(idDemande: string | null): EtapeDemo[] {
     },
     {
       route: "/enrolement",
-      titre: "Enrôlement assisté",
+      titre: "Enrôlement assisté — saisie du dossier",
       texte:
-        "Première étape : l'enrôlement. L'agent scanne les pièces disponibles, le dossier se pré-remplit, " +
-        "et le consentement est recueilli. L'objectif est de rester sous une minute.",
+        "Première étape : l'enrôlement. Je saisis l'identité du bénéficiaire — nom, prénoms, numéro de pièce, " +
+        "date de naissance et zone — le dossier se construit au fil de la frappe, et le chronomètre vise moins " +
+        "d'une minute. En conditions réelles, la lecture automatique des pièces pré-remplit ces champs en quelques secondes.",
+      actions: [
+        { type: "wait", ms: 500 },
+        { type: "type", selector: '[data-demo="enr-nom"]', value: "DIALLO", note: "Nom" },
+        { type: "type", selector: '[data-demo="enr-prenoms"]', value: "Awa", note: "Prénoms" },
+        { type: "type", selector: '[data-demo="enr-cni"]', value: "CI-003-112233", note: "Numéro de pièce (CNI)" },
+        { type: "fill", selector: '[data-demo="enr-dn"]', value: "1988-01-20", note: "Date de naissance" },
+        { type: "type", selector: '[data-demo="enr-zone"]', value: "Man", note: "Zone de résidence" },
+        { type: "wait", ms: 1200 },
+      ],
     },
     {
       route: routeDossier,

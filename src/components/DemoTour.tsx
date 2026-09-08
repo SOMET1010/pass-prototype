@@ -126,11 +126,21 @@ export function DemoTour() {
       if (token !== tokenRef.current) return;
       if (a.type === "click") {
         el.click();
-      } else if (a.type === "select") {
+      } else if (a.type === "select" || a.type === "fill") {
         setReactValue(el, a.value);
       } else if (a.type === "type") {
-        (el as HTMLInputElement).focus();
-        setReactValue(el, a.value);
+        const input = el as HTMLInputElement;
+        input.focus();
+        // Les champs date/nombre n'acceptent pas de valeur partielle → pose directe.
+        if (input.type === "date" || input.type === "number") {
+          setReactValue(input, a.value);
+        } else {
+          for (let i = 1; i <= a.value.length; i++) {
+            if (token !== tokenRef.current) return;
+            setReactValue(input, a.value.slice(0, i));
+            await sleep(60); // frappe caractère par caractère
+          }
+        }
       }
     }
     setAction(null);

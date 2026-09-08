@@ -313,7 +313,7 @@ export function Enrolement() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="field-label">Numéro de pièce d'identité (CNI) *</label>
-              <input className="field-input font-mono" value={cni} onChange={(e) => { startChrono(); setCni(e.target.value); }} disabled={!!demande} placeholder="CI-000-000000" />
+              <input data-demo="enr-cni" className="field-input font-mono" value={cni} onChange={(e) => { startChrono(); setCni(e.target.value); }} disabled={!!demande} placeholder="CI-000-000000" />
             </div>
             <div>
               <label className="field-label">NNI (N° National d'Identification)</label>
@@ -321,19 +321,19 @@ export function Enrolement() {
             </div>
             <div>
               <label className="field-label">Nom *</label>
-              <input className="field-input" value={nom} onChange={(e) => setNom(e.target.value)} disabled={!!demande} />
+              <input data-demo="enr-nom" className="field-input" value={nom} onChange={(e) => setNom(e.target.value)} disabled={!!demande} />
             </div>
             <div>
               <label className="field-label">Prénoms *</label>
-              <input className="field-input" value={prenoms} onChange={(e) => setPrenoms(e.target.value)} disabled={!!demande} />
+              <input data-demo="enr-prenoms" className="field-input" value={prenoms} onChange={(e) => setPrenoms(e.target.value)} disabled={!!demande} />
             </div>
             <div>
               <label className="field-label">Date de naissance *</label>
-              <input type="date" className="field-input" value={dn} onChange={(e) => setDn(e.target.value)} disabled={!!demande} />
+              <input data-demo="enr-dn" type="date" className="field-input" value={dn} onChange={(e) => setDn(e.target.value)} disabled={!!demande} />
             </div>
             <div>
               <label className="field-label">Zone de résidence *</label>
-              <input className="field-input" value={zone} onChange={(e) => setZone(e.target.value)} disabled={!!demande} placeholder="Ex. Korhogo" />
+              <input data-demo="enr-zone" className="field-input" value={zone} onChange={(e) => setZone(e.target.value)} disabled={!!demande} placeholder="Ex. Korhogo" />
             </div>
             <div className="sm:col-span-2">
               <label className="field-label">N° carte CMU (éligibilité sociale)</label>
