@@ -48,9 +48,39 @@ Secrets :
 > reference }` : à ajuster au format réel le jour du raccordement. L'empreinte,
 > elle, est déjà calculée et immuable.
 
+## `ansut-voix` — synthèse vocale (narration de la démonstration)
+
+Donne à la démonstration guidée une **voix institutionnelle** (Azure OpenAI TTS)
+au lieu de la voix du navigateur. La **clé API reste côté serveur** (secret Edge
+Function) — elle n'est jamais exposée dans le site statique.
+
+Requête : `POST { texte: string, voix?: string, instructions?: string }`
+→ renvoie l'audio (`audio/mpeg`). Accès réservé à un **agent authentifié**.
+
+Repli automatique : sans la clé, la fonction répond `{ configured: false }` et le
+frontend bascule sur la voix du navigateur (Web Speech API). Le parcours n'est
+jamais bloqué.
+
+Secrets :
+
+| Secret | Rôle |
+| --- | --- |
+| `AZURE_OPENAI_TTS_KEY` | **Requis** — clé API Azure OpenAI (à poser dès réception) |
+| `AZURE_OPENAI_TTS_ENDPOINT` | (option) défaut `https://dtdi-openai-audio-02.openai.azure.com/` |
+| `AZURE_OPENAI_TTS_DEPLOYMENT` | (option) défaut `gpt-4o-mini-tts` |
+| `AZURE_OPENAI_TTS_API_VERSION` | (option) défaut `2025-03-01-preview` |
+| `AZURE_OPENAI_TTS_VOICE` | (option) défaut `alloy` (autres : `sage`, `nova`, `coral`, `echo`, `shimmer`…) |
+| `AZURE_OPENAI_TTS_INSTRUCTIONS` | (option) ton de la narration |
+
+> **Activation** : la seule action requise le jour du raccordement est de poser
+> le secret `AZURE_OPENAI_TTS_KEY` (Project Settings → Edge Functions → Secrets,
+> ou `supabase secrets set AZURE_OPENAI_TTS_KEY=…`). Endpoint et déploiement sont
+> déjà pré-remplis par défaut ; aucun redéploiement n'est nécessaire.
+
 ## Déploiement
 
 ```bash
 supabase functions deploy ansut-hub
 supabase functions deploy ansut-cachet
+supabase functions deploy ansut-voix
 ```
