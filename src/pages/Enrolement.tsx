@@ -273,6 +273,7 @@ export function Enrolement() {
           {PERSONAS.map((p) => (
             <button
               key={p.cni}
+              data-demo={`enr-persona-${p.cni}`}
               onClick={() => scannerPiece(p)}
               disabled={!!demande}
               className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-pass-blue hover:bg-pass-blue-light disabled:opacity-40"

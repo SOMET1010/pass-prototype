@@ -32,19 +32,18 @@ export function construireScenario(idDemande: string | null): EtapeDemo[] {
     },
     {
       route: "/enrolement",
-      titre: "Enrôlement assisté — saisie du dossier",
+      titre: "Enrôlement assisté — saisie & lecture de pièce",
       texte:
-        "Première étape : l'enrôlement. Je saisis l'identité du bénéficiaire — nom, prénoms, numéro de pièce, " +
-        "date de naissance et zone — le dossier se construit au fil de la frappe, et le chronomètre vise moins " +
-        "d'une minute. En conditions réelles, la lecture automatique des pièces pré-remplit ces champs en quelques secondes.",
+        "Première étape : l'enrôlement. Je commence par saisir manuellement le nom et les prénoms du bénéficiaire. " +
+        "Puis, plutôt que tout retaper, l'agent lit la pièce d'identité : la reconnaissance automatique pré-remplit " +
+        "le numéro, la date de naissance et la zone en une seconde. Le chronomètre vise moins d'une minute.",
       actions: [
         { type: "wait", ms: 500 },
-        { type: "type", selector: '[data-demo="enr-nom"]', value: "DIALLO", note: "Nom" },
-        { type: "type", selector: '[data-demo="enr-prenoms"]', value: "Awa", note: "Prénoms" },
-        { type: "type", selector: '[data-demo="enr-cni"]', value: "CI-003-112233", note: "Numéro de pièce (CNI)" },
-        { type: "fill", selector: '[data-demo="enr-dn"]', value: "1988-01-20", note: "Date de naissance" },
-        { type: "type", selector: '[data-demo="enr-zone"]', value: "Man", note: "Zone de résidence" },
-        { type: "wait", ms: 1200 },
+        { type: "type", selector: '[data-demo="enr-nom"]', value: "DIALLO", note: "Saisie manuelle — Nom" },
+        { type: "type", selector: '[data-demo="enr-prenoms"]', value: "Awa", note: "Saisie manuelle — Prénoms" },
+        { type: "wait", ms: 900 },
+        { type: "click", selector: '[data-demo="enr-persona-CI-003-112233"]', note: "Lecture automatique de la pièce (OCR simulé)" },
+        { type: "wait", ms: 2200 },
       ],
     },
     {
