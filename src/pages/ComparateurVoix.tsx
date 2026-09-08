@@ -11,10 +11,10 @@ const PASSAGE =
   "du score de priorité. Un refus ne vient jamais d'un score insuffisant.";
 
 const VOIX = [
-  { id: "sage", libelle: "Sage", note: "posée, sobre" },
+  { id: "sage", libelle: "Sage", note: "posée, sobre — défaut actuel" },
   { id: "nova", libelle: "Nova", note: "claire, dynamique" },
   { id: "coral", libelle: "Coral", note: "chaleureuse, ronde" },
-  { id: "alloy", libelle: "Alloy", note: "neutre (défaut actuel)" },
+  { id: "alloy", libelle: "Alloy", note: "neutre" },
 ];
 
 export function ComparateurVoix() {

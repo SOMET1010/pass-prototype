@@ -14,7 +14,7 @@
 //   AZURE_OPENAI_TTS_ENDPOINT     (option — défaut : ressource DTDI ; alias : AZURE_OPENAI_ENDPOINT)
 //   AZURE_OPENAI_TTS_DEPLOYMENT   (option — défaut : gpt-4o-mini-tts)
 //   AZURE_OPENAI_TTS_API_VERSION  (option — défaut : 2025-03-01-preview)
-//   AZURE_OPENAI_TTS_VOICE        (option — défaut : alloy)
+//   AZURE_OPENAI_TTS_VOICE        (option — défaut : sage)
 //   AZURE_OPENAI_TTS_INSTRUCTIONS (option — ton de la narration)
 // ============================================================================
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -28,7 +28,7 @@ const cors = {
 const DEFAULT_ENDPOINT = "https://dtdi-openai-audio-02.openai.azure.com/";
 const DEFAULT_DEPLOYMENT = "gpt-4o-mini-tts";
 const DEFAULT_API_VERSION = "2025-03-01-preview";
-const DEFAULT_VOICE = "alloy";
+const DEFAULT_VOICE = "sage";
 const DEFAULT_INSTRUCTIONS =
   "Voix de narration institutionnelle en français de Côte d'Ivoire, posée, claire et bienveillante ; rythme mesuré, articulation nette, ton professionnel et rassurant.";
 const MAX_LEN = 1200;

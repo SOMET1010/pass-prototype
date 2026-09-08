@@ -69,7 +69,7 @@ Secrets :
 | `AZURE_OPENAI_TTS_ENDPOINT` | (option) défaut `https://dtdi-openai-audio-02.openai.azure.com/` (ressource où vit le déploiement) |
 | `AZURE_OPENAI_TTS_DEPLOYMENT` | (option) défaut `gpt-4o-mini-tts` |
 | `AZURE_OPENAI_TTS_API_VERSION` | (option) défaut `2025-03-01-preview` |
-| `AZURE_OPENAI_TTS_VOICE` | (option) défaut `alloy` (autres : `sage`, `nova`, `coral`, `echo`, `shimmer`…) |
+| `AZURE_OPENAI_TTS_VOICE` | (option) défaut `sage` (autres : `nova`, `coral`, `alloy`, `echo`, `shimmer`…) |
 | `AZURE_OPENAI_TTS_INSTRUCTIONS` | (option) ton de la narration |
 
 > Le secret **générique** `AZURE_OPENAI_ENDPOINT` n'est **pas** lu pour l'endpoint :
