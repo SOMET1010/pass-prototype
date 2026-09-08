@@ -57,11 +57,15 @@ elle ne peut pas être détournée en service TTS général malgré les comptes 
 démonstration publics. Si la fonction ou OpenAI est indisponible, le frontend
 reprend automatiquement la voix française du navigateur.
 
-Secret obligatoire :
+Azure OpenAI est utilisé en priorité lorsque les secrets Azure sont présents.
+OpenAI direct reste disponible comme solution secondaire.
 
 | Secret | Rôle |
 | --- | --- |
-| `OPENAI_API_KEY` | Clé API OpenAI, conservée exclusivement dans Supabase |
+| `AZURE_OPENAI_ENDPOINT` | Endpoint Azure OpenAI, sans chemin API |
+| `AZURE_OPENAI_API_KEY` | Clé Azure OpenAI, conservée exclusivement dans Supabase |
+| `AZURE_OPENAI_TTS_DEPLOYMENT` | (option) déploiement audio ; défaut : `gpt-4o-mini-tts` |
+| `OPENAI_API_KEY` | (secours) clé OpenAI directe si Azure n'est pas configuré |
 | `OPENAI_TTS_VOICE` | (option) voix OpenAI ; valeur par défaut : `marin` |
 
 Le bandeau indique explicitement « Voix GPT · générée par IA » lorsque la voix
